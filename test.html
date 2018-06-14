@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <script src="../../tests/jme-runtime.js"></script>
+        <script src="../../tests/locales.js"></script>
+        <script src="quantities.js"></script>
+    </head>
+    <body>
+    <script>
+			Numbas.queueScript('base',[],function() {});
+			Numbas.queueScript('blarg',['math','jme','jme-display'],function() {
+                console.log('blarg');
+            });
+			Numbas.queueScript('go',['jme','localisation','extensions/quantities/quantities.js'],function() {
+                var s = new Numbas.jme.Scope([Numbas.jme.builtinScope,Numbas.extensions.quantities.scope]);
+                var q = s.evaluate('quantity("5kg^3/m^2")');
+                console.log(q);
+                console.log(Numbas.jme.display.texify({tok:q}));
+
+                var treeToJME = Numbas.jme.display.treeToJME.bind(Numbas.jme.display);
+
+                var q = s.evaluate('5*quantity("kg^2/m^3")');
+                console.log(treeToJME({tok:q}));
+
+                console.log(s.evaluate('compatible(quantity("1kg"),quantity("2lb"))'));
+                console.log(s.evaluate('compatible(quantity("1kg"),quantity("2m"))'));
+                console.log(s.evaluate('quantity_kinds'));
+                console.log(s.evaluate('units_of_kind("length")'));
+                console.log(s.evaluate('aliases("dollar")'));
+                console.log(s.evaluate('tobase(quantity("15lb"))'));
+                console.log(s.evaluate('float(quantity("15"))'));
+                console.log(s.evaluate('as(quantity("lb"),quantity("5kg"))'));
+                console.log(s.evaluate('as("lb",quantity("5kg"))'));
+                console.log(s.evaluate('quantity("1m") = quantity("100cm")'));
+                console.log(s.evaluate('same(quantity("1m"), quantity("100cm"))'));
+                console.log(s.evaluate('quantity("1m") < quantity("200cm")'));
+                console.log(s.evaluate('quantity("1m") <= quantity("200cm")'));
+                console.log(s.evaluate('2/quantity("5m")'));
+                console.log(s.evaluate('round(as("in",quantity("5m")),"0.1 in")'));
+                console.log(s.evaluate('round(as("in",quantity("5m")))'));
+                console.log(s.evaluate('string(quantity("123120.123m/kg^3"),"si-fr")'));
+                console.log(s.evaluate('units_numerator(quantity("5m^2/s"))'));
+                console.log(s.evaluate('units(quantity("5m^2/s"))'));
+            });
+    </script>
+    </body>
+</html>
