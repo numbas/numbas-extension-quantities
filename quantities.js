@@ -1,11 +1,12 @@
 Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],function(quantities) {
+    var jme = Numbas.jme;
 
     var superscripts = '⁰¹²³⁴⁵⁶⁷⁸⁹';
     function superscript(n) {
         return (n+'').replace(/\d/g,function(d){ d=parseInt(d); return superscripts[d]; });
     }
 
-    var TQuantity = Numbas.jme.types.TQuantity = Numbas.jme.types.quantity = function(quantity) {
+    var TQuantity = jme.types.TQuantity = jme.types.quantity = function(quantity) {
         this.value = quantity;
     };
     TQuantity.prototype.type = 'quantity';
@@ -16,7 +17,7 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
         return units.replace(/\*/g,'⋅').replace(/(\D)(\d+)/g,function(m,name,exponent) { return name+superscript(exponent); });
     }
 
-    Numbas.jme.display.typeToTeX.quantity = function(thing,tok,texArgs,settings) {
+    jme.display.typeToTeX.quantity = function(thing,tok,texArgs,settings) {
         return tok.value.format(function(scalar,units) {
             units = units.replace(/([a-zA-Z]+)(\d+)?/g, function(s,name,exponent) {
                 return '\\text{'+name+(exponent ? superscript(exponent) : '')+'}';
@@ -24,10 +25,12 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
             return settings.texNumber(scalar,settings)+' \\, '+units;
         });
     };
-    Numbas.jme.display.typeToJME.quantity = function(tree,tok,bits,settings) {
-        return 'quantity("'+Numbas.jme.escape(tok.value.format(function(scalar,units) { return scalar+' '+units.replace(/(\D)(\d+)/g,'$1^$2'); }))+'")';
+    jme.display.typeToJME.quantity = function(tree,tok,bits,settings) {
+        var scalar = tok.value.format(function(scalar){return Numbas.math.niceNumber(scalar)});
+        var units = tok.value.format(function(scalar,units) { return units.replace(/(\D)(\d+)/g,'$1^$2'); });
+        return 'quantity('+scalar+', "'+jme.escape(units)+'")';
     }
-    Numbas.jme.typeToDisplayString.quantity = function(tok) {
+    jme.typeToDisplayString.quantity = function(tok) {
         return tok.value.format(function(scalar,units) { 
             return scalar+' '+fix_units(units);
         });
@@ -37,19 +40,28 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
         return a.value.isCompatible(b.value) && a.value.eq(b.value);
     };
 
-	var funcObj = Numbas.jme.funcObj;
-	var TString = Numbas.jme.types.TString;
-	var TNum = Numbas.jme.types.TNum;
-	var TList = Numbas.jme.types.TList;
-	var TBool = Numbas.jme.types.TBool;
+	var funcObj = jme.funcObj;
+	var TString = jme.types.TString;
+	var TNum = jme.types.TNum;
+	var TList = jme.types.TList;
+	var TBool = jme.types.TBool;
 
     function addFunction(name,deps,outtype,fn,options) {
         return quantities.scope.addFunction(new funcObj(name,deps,outtype,fn,options));
     };
 
-    quantities.scope.setVariable('quantity_kinds',Numbas.jme.wrapValue(Qty.getKinds()));
+    quantities.scope.setVariable('quantity_kinds',jme.wrapValue(Qty.getKinds()));
 
-    addFunction('quantity',[TString],TQuantity,function(q) { return Qty(q); });
+    function unit_quantity(units) {
+        if(units.match(/^\s*(\d|-)/) && !units.match(/^\s*1\s*\//)) {
+            throw(new Error("Invalid description of units: "+units));
+        }
+        return Qty(1,units);
+    }
+
+    jme.funcSynonyms['qty'] = 'quantity';
+    addFunction('quantity',[TString],TQuantity,function(q) { return unit_quantity(q); });
+    addFunction('quantity',[TNum,TString],TQuantity,function(n,q) { return unit_quantity(q).mul(n); });
     addFunction('units_of_kind',[TString],TList,function(kind) { 
         if(kind=='unitless') {
             return [''];
@@ -89,7 +101,6 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
     addFunction('unitless',[TQuantity],TBool,function(q) { return q.isUnitless(); });
     addFunction('isbase',[TQuantity],TBool,function(q) { return q.isBase(); });
     addFunction('tobase',[TQuantity],TQuantity,function(q) { return q.toBase(); });
-    addFunction('float',[TQuantity],TNum,function(q) { return q.toFloat(); });
     addFunction('as',[TString,TQuantity],TQuantity,function(unit,q) { return q.to(unit); });
     addFunction('as',[TQuantity,TQuantity],TQuantity,function(unit,q) { return q.to(unit); });
     addFunction('inverse',[TQuantity],TQuantity,function(q) { return q.inverse(); });
@@ -107,6 +118,7 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
     addFunction('/',[TQuantity,TNum],TQuantity,function(u,n) { return u.div(n); });
     addFunction('/',[TNum,TQuantity],TQuantity,function(n,u) { return u.inverse().mul(n); });
     addFunction('round',[TQuantity,TString],TQuantity,function(q,precision) { return q.toPrec(precision); });
+    addFunction('round',[TQuantity,TQuantity],TQuantity,function(q,precision) { return q.toPrec(precision.toString()); });
     addFunction('round',[TQuantity],TQuantity,function(q){ return q.toPrec(1); });
     addFunction('abs',[TQuantity],TNum,function(q){ return q.scalar; });
 
@@ -163,13 +175,13 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
         return d;
     }
 
-    var si_units = {
+    var si_units = quantities.si_units = {
         "unitless": "",
         "length": "m",
         "area": "m2",
         "volume": "m3",
         "time": "s",
-        "temperature": "K",
+        "temperature": "kelvin",
         "yank": "N/s",
         "power": "W",
         "pressure": "Pa",
@@ -203,14 +215,39 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
         "acceleration": "m/s2",
         "radiation": "sievert",
         "frequency": "Hz",
-        "speed": "",
-        "volumetric_flow": "",
-        "wavenumber": "",
-        "information_rate": "",
-        "information": "",
-        "angular_velocity": "",
-        "angle": ""
+        "speed": "m/s",
+        "volumetric_flow": "m^3/s",
+        "wavenumber": "1/s",
+        "information_rate": "byte/s",
+        "information": "byte",
+        "angular_velocity": "radian/s",
+        "angle": "radian"
     }
+
+    addFunction('as_si',[TQuantity],TQuantity,function(q) {
+        var kind = q.kind();
+        if(kind) {
+            var unit = si_units[kind];
+            return q.to(si_units[kind]);
+        } else {
+            var kinds = quantities.decode_signature(q.signature);
+            var numerator = [];
+            var denominator = [];
+            for(var x in kinds) {
+                var unit = si_units[x];
+                if(kinds[x]>0) {
+                    numerator.push(unit+'^'+kinds[x]);
+                } else if(kinds[x]<0) {
+                    denominator.push(unit+'^'+(-kinds[x]));
+                }
+            }
+            if(!numerator.length) {
+                numerator.push('1');
+            }
+            var units = numerator.join('*')+(denominator.length ? '/'+denominator.join('*') : '');
+            return q.to(units);
+        }
+    });
 });
 
 Numbas.queueScript('js-quantities',[],function() {
