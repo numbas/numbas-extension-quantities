@@ -1,6 +1,6 @@
 # Quantities extension for Numbas
 
-This extension wraps thr [js-quantities](https://github.com/gentooboontoo/js-quantities) library to provide a "quantity with units" data type to Numbas.
+This extension wraps the [js-quantities](https://github.com/gentooboontoo/js-quantities) library to provide a "quantity with units" data type to Numbas.
 
 It provides a `quantity` data type, which represents a scalar *amount* and a list of *units*.
 
