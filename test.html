@@ -5,44 +5,114 @@
         <script src="../../tests/jme-runtime.js"></script>
         <script src="../../tests/locales.js"></script>
         <script src="quantities.js"></script>
+        <style>
+            .log {
+                font-family: monospace;
+            }
+            .log.error {
+                color: red;
+                font-weight: bold;
+            }
+        </style>
     </head>
     <body>
-    <script>
+        <ul id="tests"></ul>
+
+        <script>
 			Numbas.queueScript('base',[],function() {});
-			Numbas.queueScript('blarg',['math','jme','jme-display'],function() {
-                console.log('blarg');
-            });
 			Numbas.queueScript('go',['jme','localisation','extensions/quantities/quantities.js'],function() {
                 var s = new Numbas.jme.Scope([Numbas.jme.builtinScope,Numbas.extensions.quantities.scope]);
-                var q = s.evaluate('quantity("5kg^3/m^2")');
-                console.log(q);
-                console.log(Numbas.jme.display.texify({tok:q}));
-
                 var treeToJME = Numbas.jme.display.treeToJME.bind(Numbas.jme.display);
 
-                var q = s.evaluate('5*quantity("kg^2/m^3")');
-                console.log(treeToJME({tok:q}));
+                function run(expr) {
+                    try {
+                        console.log(`${expr}:\t${Numbas.jme.display.treeToJME({tok:s.evaluate(expr)})}`);
+                    } catch(e) {
+                        console.error(e.message);
+                        console.error(e.stack);
+                    }
+                }
 
-                console.log(s.evaluate('compatible(quantity("1kg"),quantity("2lb"))'));
-                console.log(s.evaluate('compatible(quantity("1kg"),quantity("2m"))'));
-                console.log(s.evaluate('quantity_kinds'));
-                console.log(s.evaluate('units_of_kind("length")'));
-                console.log(s.evaluate('aliases("dollar")'));
-                console.log(s.evaluate('tobase(quantity("15lb"))'));
-                console.log(s.evaluate('float(quantity("15"))'));
-                console.log(s.evaluate('as(quantity("lb"),quantity("5kg"))'));
-                console.log(s.evaluate('as("lb",quantity("5kg"))'));
-                console.log(s.evaluate('quantity("1m") = quantity("100cm")'));
-                console.log(s.evaluate('same(quantity("1m"), quantity("100cm"))'));
-                console.log(s.evaluate('quantity("1m") < quantity("200cm")'));
-                console.log(s.evaluate('quantity("1m") <= quantity("200cm")'));
-                console.log(s.evaluate('2/quantity("5m")'));
-                console.log(s.evaluate('round(as("in",quantity("5m")),"0.1 in")'));
-                console.log(s.evaluate('round(as("in",quantity("5m")))'));
-                console.log(s.evaluate('string(quantity("123120.123m/kg^3"),"si-fr")'));
-                console.log(s.evaluate('units_numerator(quantity("5m^2/s"))'));
-                console.log(s.evaluate('units(quantity("5m^2/s"))'));
+                function element(name,attr,content) {
+                    var e = document.createElement(name);
+                    if(attr) {
+                        for(var x in attr) {
+                            e.setAttribute(x,attr[x]);
+                        }
+                    }
+                    if(content!==undefined) {
+                        e.innerHTML = content;
+                    }
+                    return e;
+                }
+
+                var tests = document.getElementById('tests');
+                function log() {
+                    var str = Array.prototype.join.call(arguments,' ');
+                    console.log(str);
+                    var li = element('li',{class:'log'},str.replace(/\n/g,'<br>'));
+                    tests.appendChild(li);
+                }
+                function error() {
+                    var str = Array.prototype.join.call(arguments);
+                    console.error(str);
+                    var li = element('li',{class:'log error'},str.replace(/\n/g,'<br>'));
+                    tests.appendChild(li);
+                }
+
+                function produces(expr,expected) {
+                    try {
+                        var result = Numbas.jme.display.treeToJME({tok:s.evaluate(expr)});
+                        if(result==expected) {
+                            log('✓ ', expr+' = '+expected);
+                        } else {
+                            error('✕', expr+'\n'+result+'\n'+expected);
+                        }
+                    } catch(e) {
+                        error(expr+'\n'+e.message);
+                    }
+                }
+
+                produces('units_of_kind("length")','[ "angstrom", "AU", "datamile", "fathom", "foot", "furlong", "inch", "league", "light-minute", "light-second", "light-year", "meter", "mil", "mile", "naut-mile", "parsec", "pica", "point", "redshift", "rod", "yard", "m" ]');
+                produces('aliases("meter")','[ "m", "meter", "meters", "metre", "metres" ]');
+                produces('compatible(qty("m"),qty("ft"))','true');
+                produces('compatible(qty("m"),qty("kg"))','false');
+                produces('kind(qty("m"))','"length"');
+                produces('kind(qty("N*s"))','"momentum"');
+                produces('kind(qty("W/s"))','""');
+                produces('isbase(qty("kg"))','true');
+                produces('isbase(qty("lb"))','false');
+                produces('tobase(qty(1,"inch"))','quantity(0.0254, "m")');
+                produces('as("cm",qty(1.5,"m"))','quantity(150, "cm")');
+                produces('as(qty("kg"),qty(100,"g"))','quantity(0.1, "kg")');
+                produces('as_si(quantity(1,"lb*ft"))','quantity(0.1382549544, "m*kg")');
+                produces('inverse(qty(2,"m/s"))','quantity(0.5, "s/m")');
+                produces('same(qty(1,"m"),qty(100,"cm"))','false');
+                produces('same(qty(1,"m"),qty(2,"m"))','false');
+                produces('same(qty(1,"m"),qty(1,"m"))','true');
+                produces('qty(1,"cm") < qty(1,"m")','true');
+                produces('qty(4,"feet") > qty(1,"m")','true');
+                produces('qty(1,"cm") > qty(1,"cm")','false');
+                produces('qty(1,"cm") >= qty(1,"cm")','true');
+                produces('qty(2.54,"cm") = qty(1,"inch")','true');
+                produces('qty(1,"cm") = qty(1,"second")','false');
+                produces('qty(1,"cm") + qty(1,"m")','quantity(101, "cm")');
+                produces('qty(100,"cm") - qty(1,"m")','quantity(0, "cm")');
+                produces('qty(100,"cm") * qty(1,"s")','quantity(100, "cm*s")');
+                produces('qty(100,"N") / qty(4,"m^2")','quantity(25, "N/m^2")');
+                produces('round(qty(123,"cm"),"1 m")','quantity(100, "cm")');
+                produces('round(qty(0.1697,"m"),qty(5,"cm"))','quantity(0.15, "m")');
+                produces('round(qty(6.32,"kg"))','quantity(6, "kg")');
+                produces('abs(qty(53,"s"))','53');
+                produces('string(qty(23,"kg*s^-1"))','"23 kg/s"');
+                produces('string(qty(1000.235,"kg"), "si-fr")','"1 000,235 kg"');
+                produces('units_numerator(qty(1,"m"))','[ "meter" ]');
+                produces('units_denominator(qty(1,"m"))','[ "1" ]');
+                produces('units_numerator(qty(1,"kg*cm^2/s^2"))','[ "kilogram", "centi", "meter", "centi", "meter" ]');
+                produces('units_denominator(qty(1,"m^2/s^2"))','[ "second", "second" ]');
+                produces('units(qty(23,"m^2/s"))','quantity(1, "m^2/s")');
+                produces('units_string(qty("kg*cm^2/s^2"))','"kg⋅cm²/s²"');
             });
-    </script>
+        </script>
     </body>
 </html>

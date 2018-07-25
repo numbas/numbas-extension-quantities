@@ -9,7 +9,7 @@ It's our intention to add support for more precise number representations to Num
 
 ## JME functions
 
-### `quantity([number],units)` or `qty([number],units)`
+### `quantity([number], units)` or `qty([number], units)`
 
 Create a quantity with the given units. If the number is not given, the returned quantity represents 1 of the given units.
 Use `*` and `/` to combine units, and `^` for powers of units.
@@ -19,7 +19,7 @@ An empty `units` string will produce a unitless quantity.
 
 * `quantity("kg")`
 * `qty("kg")`
-* `quantity(1.2,"kg")`
+* `quantity(1.2, "kg")`
 * `quantity("kg*m/s^2")`
 * `quantity("1/s")`
 * `quantity("kg*m^-2")`
@@ -38,16 +38,16 @@ Returns a list of accepted names for the given unit.
 
 **Example:**
 
-* `aliases("meter")` → `[ "m", "meter", "meters", "metres", "metres" ]`
+* `aliases("meter")` → `[ "m", "meter", "meters", "metre", "metres" ]`
 
-### `compatible(q1,q2)`
+### `compatible(q1, q2)`
 
 Are the two given quantities compatible? That is, are they of the same kindm, so one can be converted to the other?
 
 **Examples:**
 
-* `compatible(qty("m"),qty("ft"))` → `true`
-* `compatible(qty("m"),qty("kg"))` → `false`
+* `compatible(qty("m"), qty("ft"))` → `true`
+* `compatible(qty("m"), qty("kg"))` → `false`
 
 ### `kind(quantity)`
 
@@ -60,16 +60,6 @@ For combinations of units that don't correspond to a built-in kind, an empty str
 * `kind(qty("m"))` → `"length"`
 * `kind(qty("N*s"))` → `"momentum"`
 * `kind(qty("W/s"))` → `""`
-
-### `unitless(quantity)`
-
-Is the given quantity unitless?
-Equivalent to `kind(quantity)="unitless"`
-
-**Example:**
-
-* `unitless(qty("m/ft"))` → `true`
-* `unitless(qty("m/s"))` → `false`
 
 ### `isbase(quantity)`
 
@@ -86,17 +76,17 @@ Convert the given quantity to base SI units.
 
 **Example**:
 
-* `tobase(qty(1,"inch"))` → `quantity(0.0254, "m")`
+* `tobase(qty(1, "inch"))` → `quantity(0.0254, "m")`
 
-### `as(units,q_from)` or `as(q_to,q_from)`
+### `as(units, q_from)` or `as(q_to, q_from)`
 
 Convert quantity `q_from` to the units specified by the given string, or the same units as `q_to`.
 If the desired units are not compatible with `q_from`, an error is thrown.
 
 **Examples**:
 
-* `as("cm",qty(1.5,"m"))` → `quantity(150,"cm")`
-* `as(qty("kg"),qty(100,"g"))` → `quantity(0.1,"kg")`
+* `as("cm", qty(1.5, "m"))` → `quantity(150, "cm")`
+* `as(qty("kg"), qty(100, "g"))` → `quantity(0.1, "kg")`
 
 ### `as_si(quantity)`
 
@@ -104,7 +94,7 @@ Convert quantity to SI units.
 
 **Example:**
 
-* `as_si(quantity(1,"lb*ft"))` → `quantity(0.1382549544, "m*kg")`
+* `as_si(quantity(1, "lb*ft"))` → `quantity(0.1382549544, "m*kg")`
 
 ### `inverse(quantity)`
 
@@ -112,17 +102,17 @@ Return the reciprocal of the given quantity.
 
 **Example:**
 
-* `inverse(qty(2,"m/s"))` → `quantity(0.5,"s/m")`
+* `inverse(qty(2, "m/s"))` → `quantity(0.5, "s/m")`
 
-### `same(a,b)`
+### `same(a, b)`
 
 Are `a` and `b` both exactly the same quantity, measured in the same units?
 
 **Examples:**
 
-* `same(qty(1,"m"),qty(100,"cm"))` → `false`
-* `same(qty(1,"m"),qty(2,"m"))` → `false`
-* `same(qty(1,"m"),qty(1,"m"))` → `true`
+* `same(qty(1, "m"), qty(100, "cm"))` → `false`
+* `same(qty(1, "m"), qty(2, "m"))` → `false`
+* `same(qty(1, "m"), qty(1, "m"))` → `true`
 
 ### `a < b`, `a <= b`, `a > b`, `a >= b`
 
@@ -130,11 +120,10 @@ Compare quantities `a` and `b`. If their units are not compatible, an error is t
 
 **Examples:**
 
-* `qty(1,"cm") < qty(1,"m")` → `true`
-* `qty(4,"feet") > qty(1,"m")` → `true`
-* `qty(4,"feet") > qty(1,"m")` → `true`
-* `qty(1,"cm") > qty(1,"cm")` → `false`
-* `qty(1,"cm") >= qty(1,"cm")` → `true`
+* `qty(1, "cm") < qty(1, "m")` → `true`
+* `qty(4, "feet") > qty(1, "m")` → `true`
+* `qty(1, "cm") > qty(1, "cm")` → `false`
+* `qty(1, "cm") >= qty(1, "cm")` → `true`
 
 ### `a = b`
 
@@ -142,8 +131,8 @@ Quantities `a` and `b` are equal if their units are compatible and they represen
 
 **Examples:**
 
-* `qty(2.54,"cm") = qty(1,"inch")` → `true`
-* `qty(1,"cm") = qty(1,"second")` → `false`
+* `qty(2.54, "cm") = qty(1, "inch")` → `true`
+* `qty(1, "cm") = qty(1, "second")` → `false`
 
 ### `a + b`, `a - b`, `a * b`, `a / b`
 
@@ -152,21 +141,21 @@ When multiplying or dividing, units are not automatically converted to their com
 
 **Examples:**
 
-* `qty(1,"cm") + qty(1,"m")` → `quantity(101, "cm")`
-* `qty(100,"cm") - qty(1,"m")` → `quantity(0, "cm")`
-* `qty(100,"cm") * qty(1,"s")` → `quantity(100, "cm*s")`
-* `qty(100,"N") / qty(4,"m^2")` → `quantity(25, "N/m^2")`
+* `qty(1, "cm") + qty(1, "m")` → `quantity(101, "cm")`
+* `qty(100, "cm") - qty(1, "m")` → `quantity(0, "cm")`
+* `qty(100, "cm") * qty(1, "s")` → `quantity(100, "cm*s")`
+* `qty(100, "N") / qty(4, "m^2")` → `quantity(25, "N/m^2")`
 
-### `round(quantity,precision)`
+### `round(quantity, precision)`
 
 Round `quantity` to the given precision, either a string in the form `"amount units"`, or another quantity.
 If precision is not given, the quantity is rounded to the nearest whole unit.
 
 **Examples:**
 
-* `round(qty("123","cm"),"1 m")` → `quantity(100,"cm")`
-* `round(qty(0.1697,"m"),qty(5,"cm"))` → `quantity(0.15,"m")`
-* `round(qty(6.32,"kg"))` → `quantity(6,"kg")`
+* `round(qty(123, "cm"), "1 m")` → `quantity(100, "cm")`
+* `round(qty(0.1697, "m"), qty(5, "cm"))` → `quantity(0.15, "m")`
+* `round(qty(6.32, "kg"))` → `quantity(6, "kg")`
 
 ### `abs(quantity)`
 
@@ -174,16 +163,16 @@ The scalar amount of the quantity, as a number - in other words, strip off the u
 
 **Example:**
 
-* `abs(qty(53,"s"))` → `53`
+* `abs(qty(53, "s"))` → `53`
 
-### `string(quantity,[notation style])`
+### `string(quantity, [notation style])`
 
 A string representing the given quantity, in the given [notational style](https://docs.numbas.org.uk/en/latest/number-notation.html#styles-of-notation) (plain English is the default)
 
 **Examples:**
 
-* `string(qty(23,"kg*s^-1"))` → `"23 kg/s"`
-* `string(qty(1000.235,"kg"), "si-fr")` → `"1 000,235 kg"`
+* `string(qty(23, "kg*s^-1"))` → `"23 kg/s"`
+* `string(qty(1000.235, "kg"), "si-fr")` → `"1 000,235 kg"`
 
 ### `units_numerator(quantity)` and `units_denominator(quantity)`
 
@@ -194,10 +183,10 @@ Any order-of-magnitude prefixes are included as separate items in the list
 
 **Examples:**
 
-* `units_numerator(qty(1,"m"))` → `[ "meter" ]`
-* `units_denominator(qty(1,"m"))` → `[ "1" ]`
-* `units_numerator(qty(1,"kg*m^2/s^2"))` → `[ "kilogram", "centi", "meter", "centi", "meter" ]`
-* `units_denominator(qty(1,"m^2/s^2"))` → `[ "second", "second" ]`
+* `units_numerator(qty(1, "m"))` → `[ "meter" ]`
+* `units_denominator(qty(1, "m"))` → `[ "1" ]`
+* `units_numerator(qty(1, "kg*cm^2/s^2"))` → `[ "kilogram", "centi", "meter", "centi", "meter" ]`
+* `units_denominator(qty(1, "m^2/s^2"))` → `[ "second", "second" ]`
 
 ### `units(quantity)`
 
@@ -205,7 +194,7 @@ Return a quantity representing one unit of the same kind as the given quantity.
 
 **Example:**
 
-* `units(qty(23,"m^2/s"))` → `quantity(1, "m^2/s")`
+* `units(qty(23, "m^2/s"))` → `quantity(1, "m^2/s")`
 
 ### `units_string(quantity)`
 
@@ -213,7 +202,7 @@ Return a string describing the units of the given quantity, suitable for display
 
 **Example:**
 
-* `units_string(qty("kg*cm^2/s^2"))` → `kg⋅cm²/s²`
+* `units_string(qty("kg*cm^2/s^2"))` → `"kg⋅cm²/s²"`
 
 ### `quantity_kinds`
 
