@@ -4,7 +4,8 @@ This extension wraps thr [js-quantities](https://github.com/gentooboontoo/js-qua
 
 It provides a `quantity` data type, which represents a scalar *amount* and a list of *units*.
 
-**A note about precision:** Amounts are represented with JavaScript floating-point numbers, which are only precise to around 30 decimal places. It's our intention to add support for more precise number representations to Numbas; when that happens, this extension could be updated to use that.
+**A note about precision:** Amounts are represented with JavaScript floating-point numbers, which are only precise to around 30 decimal places. 
+It's our intention to add support for more precise number representations to Numbas; when that happens, this extension could be updated to use that.
 
 ## JME functions
 
@@ -214,8 +215,323 @@ Return a string describing the units of the given quantity, suitable for display
 
 * `units_string(qty("kg*cm^2/s^2"))` → `kg⋅cm²/s²`
 
+### `quantity_kinds`
 
+A constant list of all the recognised kinds of units.
+
+## JavaScript functions
+
+See the [documentation for js-quantities](https://github.com/gentooboontoo/js-quantities) for detail on its JavaScript API.
+
+The `Qty` object is available globally when this extension is loaded.
 
 ## <a name="recognised-units">Recognised units</a>
 
+The following unit names are recognised. Units of the same kind can be converted between each other.
+The [prefixes](#prefixes) can be written to the left of any other unit, to change the order of magnitude.
 
+### acceleration
+
+* gee
+
+### activity
+
+* Katal, kat, katal
+* U, enzUnit, unit
+
+### angle
+
+* rad, radian, radians
+* deg, degree, degrees
+* gon, grad, gradian, grads
+* rotation
+
+### angular velocity
+
+* rpm
+
+### area
+
+* hectare
+* acre, acres
+* sqft
+
+### capacitance
+
+* F, Farad, farad
+
+### charge
+
+* C, Coulomb, coulomb
+* Ah
+
+### concentration
+
+* M, molar
+* wt%, wtpercent
+
+### conductance
+
+* S, Siemens, siemens
+
+### counting
+
+* cell, cells
+* each
+* count
+* base-pair, bp
+* nt, nucleotide
+* molecule, molecules
+
+### currency
+
+* USD, dollar
+* cents
+
+### current
+
+* A, Ampere, amp, ampere, amps
+
+### energy
+
+* J, Joule, joule, joules
+* erg, ergs
+* BTU, BTUs, btu
+* cal, calorie, calories
+* Cal, Calorie, Calories
+* Therm, th, therm, therm-US, therms
+* Wh
+
+### force
+
+* N, Newton, newton
+* dyn, dyne
+* lbf, pound-force
+
+### frequency
+
+* Hertz, Hz, hertz
+
+### illuminance
+
+* lux
+
+### inductance
+
+* H, Henry, henry
+
+### information
+
+* B, byte, bytes
+* b, bit, bits
+
+### information rate
+
+* Bps
+* bps
+
+### length
+
+* m, meter, meters, metre, metres
+* ", in, inch, inches
+* ', feet, foot, ft
+* yard, yards, yd
+* mi, mile, miles
+* naut-mile, nmi
+* league, leagues
+* furlong, furlongs
+* rd, rod, rods
+* mil, mils
+* ang, angstrom, angstroms
+* fathom, fathoms
+* pica, picas
+* point, points, pt
+* red-shift, redshift, z
+* AU, astronomical-unit
+* light-second, ls
+* light-minute, lmin
+* light-year, ly
+* parsec, parsecs, pc
+* DM, datamile
+
+### logarithmic
+
+* dB, decibel, decibels
+
+### luminosity
+
+* candela, cd
+
+### luminous power
+
+* lm, lumen
+
+### magnetism
+
+* Wb, weber, webers
+* T, tesla, teslas
+* G, gauss
+* Mx, maxwell, maxwells
+* Oe, oersted, oersteds
+
+### mass
+
+* kg, kilogram, kilograms
+* AMU, amu, u
+* Da, Dalton, Daltons, dalton, daltons
+* slug, slugs
+* short-ton, tn, ton
+* metric-ton, tonne
+* carat, carats, ct
+* #, lb, lbs, pound, pounds
+* ounce, ounces, oz
+* g, gram, gramme, grammes, grams
+* gr, grain, grains
+* dr, dram, drams
+* st, stone, stones
+
+### potential
+
+* V, Volt, volt, volts
+
+### power
+
+* W, watt, watts
+* VA, volt-ampere
+* VAR, VAr, Var, var, volt-ampere-reactive
+* horsepower, hp
+
+### <a name="prefixes">prefix</a>
+
+* googol
+* Ki, Kibi, kibi
+* Mebi, Mi, mebi
+* Gi, Gibi, gibi
+* Tebi, Ti, tebi
+* Pebi, Pi, pebi
+* Ei, Exi, exi
+* Zebi, Zi, zebi
+* Yebi, Yi, yebi
+* Y, Yotta, yotta
+* Z, Zetta, zetta
+* E, Exa, exa
+* P, Peta, peta
+* T, Tera, tera
+* G, Giga, giga
+* M, Mega, mega
+* k, kilo
+* Hecto, h, hecto
+* Deca, da, deca, deka
+* Deci, d, deci
+* Centi, c, centi
+* Milli, m, milli
+* Micro, mc, micro, u, µ, μ
+* Nano, n, nano
+* Pico, p, pico
+* Femto, f, femto
+* Atto, a, atto
+* Zepto, z, zepto
+* Yocto, y, yocto
+
+### prefix only
+
+* doz, dozen, dz
+* %, percent
+* ppm
+* ppt
+* gr, gross
+
+### pressure
+
+* Pa, Pascal, pascal
+* bar, bars
+* mmHg
+* inHg
+* torr
+* ATM, atm, atmosphere, atmospheres
+* psi
+* cmH2O, cmh2o
+* inH2O, inh2o
+
+### radiation
+
+* Gy, gray, grays
+* R, roentgen
+* Sv, sievert, sieverts
+* Bq, becquerel, becquerels
+* Ci, curie, curies
+
+### rate
+
+* cpm
+* dpm
+* bpm
+
+### resistance
+
+* Ohm, ohm, Ω, Ω
+
+### resolution
+
+* dot, dots
+* pixel, px
+* ppi
+
+### solid angle
+
+* sr, steradian, steradians
+
+### speed
+
+* kph
+* mph
+* kn, knot, knots, kt, kts
+* fps
+
+### substance
+
+* mol, mole
+
+### temperature
+
+* degK, kelvin
+* celsius, celsius, centigrade, degC
+* degF, fahrenheit
+* degR, rankine
+* temp-K, tempK
+* temp-C, tempC
+* temp-F, tempF
+* temp-R, tempR
+
+### time
+
+* s, sec, second, seconds, secs
+* min, mins, minute, minutes
+* h, hour, hours, hr, hrs
+* d, day, days
+* week, weeks, wk
+* fortnight, fortnights
+* annum, y, year, years, yr
+* decade, decades
+* centuries, century
+
+### typography
+
+* dpi
+
+### viscosity
+
+* P, poise
+* St, stokes
+
+### volume
+
+* L, l, liter, liters, litre, litres
+* gal, gallon, gallons
+* qt, quart, quarts
+* pint, pints, pt
+* cu, cup, cups
+* floz, fluid-ounce, fluid-ounces
+* tablespoon, tablespoons, tb, tbs, tbsp
+* teaspoon, teaspoons, tsp
+* bsh, bu, bushel, bushels
