@@ -80,6 +80,9 @@
                 produces('kind(qty("m"))','"length"');
                 produces('kind(qty("N*s"))','"momentum"');
                 produces('kind(qty("W/s"))','""');
+                produces('unitless(qty(1,""))','true');
+                produces('unitless(qty(1,"m"))','false');
+                produces('unitless(qty(1,"m/ft"))','false');
                 produces('isbase(qty("kg"))','true');
                 produces('isbase(qty("lb"))','false');
                 produces('tobase(qty(1,"inch"))','quantity(0.0254, "m")');

@@ -98,6 +98,7 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
     addFunction('aliases',[TString],TList,function(unit) { return Qty.getAliases(unit).map(function(u){return new TString(u)}); });
     addFunction('compatible',[TQuantity,TQuantity],TBool,function(a,b) { return a.isCompatible(b); });
     addFunction('kind',[TQuantity],TString,function(q) { return q.kind() || ''; });
+    addFunction('unitless',[TQuantity],TBool,function(q) { return q.isUnitless(); });
     addFunction('isbase',[TQuantity],TBool,function(q) { return q.isBase(); });
     addFunction('tobase',[TQuantity],TQuantity,function(q) { return q.toBase(); });
     addFunction('as',[TString,TQuantity],TQuantity,function(unit,q) { return q.to(unit); });

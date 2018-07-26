@@ -61,6 +61,15 @@ For combinations of units that don't correspond to a built-in kind, an empty str
 * `kind(qty("N*s"))` → `"momentum"`
 * `kind(qty("W/s"))` → `""`
 
+### `unitless(quantity)`
+
+Does the given quantity have no associated units?
+Note that a *dimensionless* quantity is **not necessarily** unitless - for example, a quantity measured in meters per foot has no dimension but is not unitless.
+
+* `unitless(qty(1,""))` → `true`
+* `unitless(qty(1,"m"))` → `false`
+* `unitless(qty(1,"m/ft"))` → `false`
+
 ### `isbase(quantity)`
 
 Is the given quantity in base units, as defined in the International System of Units (SI)?
