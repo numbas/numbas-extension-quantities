@@ -102,13 +102,17 @@
                 produces('qty(1,"cm") + qty(1,"m")','quantity(101, "cm")');
                 produces('qty(100,"cm") - qty(1,"m")','quantity(0, "cm")');
                 produces('qty(100,"cm") * qty(1,"s")','quantity(100, "cm*s")');
+                produces('5 * quantity(6, "g")','quantity(30, "g")');
                 produces('qty(100,"N") / qty(4,"m^2")','quantity(25, "N/m^2")');
                 produces('round(qty(123,"cm"),"1 m")','quantity(100, "cm")');
                 produces('round(qty(0.1697,"m"),qty(5,"cm"))','quantity(0.15, "m")');
                 produces('round(qty(6.32,"kg"))','quantity(6, "kg")');
+                produces('precround(qty(123.456,"cm"), 1)','quantity(123.5, "cm")');
+                produces('siground(qty(123.456,"cm"), 1)','quantity(100, "cm")');
                 produces('abs(qty(53,"s"))','53');
                 produces('string(qty(23,"kg*s^-1"))','"23 kg/s"');
                 produces('string(qty(1000.235,"kg"), "si-fr")','"1 000,235 kg"');
+                produces('string(qty("kg*cm^2/s^2"))','"1 kg⋅cm²/s²"');
                 produces('units_numerator(qty(1,"m"))','[ "meter" ]');
                 produces('units_denominator(qty(1,"m"))','[ "1" ]');
                 produces('units_numerator(qty(1,"kg*cm^2/s^2"))','[ "kilogram", "centi", "meter", "centi", "meter" ]');

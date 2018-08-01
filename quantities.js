@@ -30,10 +30,15 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
         var units = tok.value.format(function(scalar,units) { return units.replace(/(\D)(\d+)/g,'$1^$2'); });
         return 'quantity('+scalar+', "'+jme.escape(units)+'")';
     }
+
+    function quantity_string(q,style) {
+        return q.format(function(scalar,units) {
+            return Numbas.math.niceNumber(scalar,{style:style})+' '+fix_units(units);
+        }); 
+    }
+
     jme.typeToDisplayString.quantity = function(tok) {
-        return tok.value.format(function(scalar,units) { 
-            return scalar+' '+fix_units(units);
-        });
+        return quantity_string(tok.value);
     }
 
     Numbas.util.equalityTests['quantity'] = function(a,b) {
@@ -121,17 +126,34 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
     addFunction('round',[TQuantity,TQuantity],TQuantity,function(q,precision) { return q.toPrec(precision.toString()); });
     addFunction('round',[TQuantity],TQuantity,function(q){ return q.toPrec(1); });
     addFunction('abs',[TQuantity],TNum,function(q){ return q.scalar; });
+    
+    /** Round this quantity's scalar to the given number of decimal places.
+     * @param {Quantity} q
+     * @param {Number} dp
+     * @returns {Quantity}
+     */
+    quantities.precround = function(q,dp) {
+        var v = q.scalar;
+        return Qty({scalar: Numbas.math.precround(v,dp), numerator: q.numerator, denominator: q.denominator});
+    }
+    /** Round this quantity's scalar to the given number of significant figures.
+     * @param {Quantity} q
+     * @param {Number} dp
+     * @returns {Quantity}
+     */
+    quantities.siground = function(q,dp) {
+        var v = q.scalar;
+        return Qty({scalar: Numbas.math.siground(v,dp), numerator: q.numerator, denominator: q.denominator});
+    }
+    addFunction('precround',[TQuantity,TNum], TQuantity, quantities.precround);
+    addFunction('siground',[TQuantity,TNum], TQuantity, quantities.siground);
 
     addFunction('string',[TQuantity],TString,function(q){ 
-        return q.format(function(scalar,units) {
-            return Numbas.math.niceNumber(scalar)+' '+fix_units(units);
-        }); 
+        return quantity_string(q);
     });
     addFunction('string',[TQuantity,TString],TString,function(q,style){ 
         // string(quantity, number notation style)
-        return q.format(function(scalar,units) {
-            return Numbas.math.niceNumber(scalar,{style:style})+' '+fix_units(units);
-        }); 
+        return quantity_string(q,style);
     });
     function clean_units(units) {
         return units.map(function(u){return new TString(u.replace(/^<(.*)>$/,'$1'))});

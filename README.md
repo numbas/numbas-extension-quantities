@@ -155,9 +155,17 @@ When multiplying or dividing, units are not automatically converted to their com
 * `qty(100, "cm") * qty(1, "s")` → `quantity(100, "cm*s")`
 * `qty(100, "N") / qty(4, "m^2")` → `quantity(25, "N/m^2")`
 
+### `n * quantity` or `quantity * n`
+
+Multiply a quantity by a scalar.
+
+**Example:**
+
+* `5 * quantity(6, "g")` → `quantity(30, "g")`
+
 ### `round(quantity, precision)`
 
-Round `quantity` to the given precision, either a string in the form `"amount units"`, or another quantity.
+Round `quantity` to the nearest multiple of `precision`, given either as a string in the form `"amount units"`, or another quantity.
 If precision is not given, the quantity is rounded to the nearest whole unit.
 
 **Examples:**
@@ -165,6 +173,22 @@ If precision is not given, the quantity is rounded to the nearest whole unit.
 * `round(qty(123, "cm"), "1 m")` → `quantity(100, "cm")`
 * `round(qty(0.1697, "m"), qty(5, "cm"))` → `quantity(0.15, "m")`
 * `round(qty(6.32, "kg"))` → `quantity(6, "kg")`
+
+### `precround(quantity,dp)`
+
+Round `quantity` to `dp` decimal places. 
+
+**Example:**
+
+* `precround(qty(123.456,"cm"), 1)` → `quantity(123.5, "cm")`
+
+### `siground(quantity,sf)`
+
+Round `quantity` to `sf` significant figures. 
+
+**Example:**
+
+* `siground(qty(123.456,"cm"), 1)` → `quantity(100, "cm")`
 
 ### `abs(quantity)`
 
@@ -222,6 +246,16 @@ A constant list of all the recognised kinds of units.
 See the [documentation for js-quantities](https://github.com/gentooboontoo/js-quantities) for detail on its JavaScript API.
 
 The `Qty` object is available globally when this extension is loaded.
+
+In addition, the following functions are defined under the `Numbas.extensions.quantities` namespace:
+
+### `precround(q,dp)`
+
+Round the quantity `q` to `dp` decimal places. See [Numbas.math.precround](http://numbas.github.io/Numbas/Numbas.math.html#.precround)
+
+### `siground(q,sf)`
+
+Round the quantity `q` to `sf` significant figures. See [Numbas.math.siground](http://numbas.github.io/Numbas/Numbas.math.html#.siground)
 
 ## <a name="recognised-units">Recognised units</a>
 
