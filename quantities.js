@@ -65,6 +65,9 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
     Numbas.util.equalityTests['quantity'] = function(a,b) {
         return a.value.isCompatible(b.value) && a.value.eq(b.value);
     };
+    Numbas.jme.tokenComparisons['quantity'] = function(a,b) {
+        return a.value.gt(b.value) ? 1 : a.value.lt(b.value) ? -1 : 0;
+    }
 
 	var funcObj = jme.funcObj;
 	var TString = jme.types.TString;
