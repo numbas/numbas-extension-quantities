@@ -14,16 +14,31 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
     function fix_units(units) {
         // js-quantities writes 'kg^2' as 'kg2', and doesn't expose the output names of units, so we can't write our own formatter
         // so instead, assume that digits never appear in the names of units, and apply this regex
-        return units.replace(/\*/g,'⋅').replace(/(\D)(\d+)/g,function(m,name,exponent) { return name+superscript(exponent); });
+        return units.replace(/\*/g,'⋅').replace(/(\D)(-?\d+)/g,function(m,name,exponent) { return name+superscript(exponent); });
+    }
+
+    function plain_units(units) {
+        return units.replace(/(\D)(-?\d+)/g,function(m,name,exponent) { return name+'^'+exponent; });
+    }
+
+    function tex_units(units) {
+        return units.replace(/([a-zA-Z]+)(\d+)?/g, function(s,name,exponent) {
+            return '\\text{'+name+(exponent ? superscript(exponent) : '')+'}';
+        });
     }
 
     jme.display.typeToTeX.quantity = function(thing,tok,texArgs,settings) {
         return tok.value.format(function(scalar,units) {
-            units = units.replace(/([a-zA-Z]+)(\d+)?/g, function(s,name,exponent) {
-                return '\\text{'+name+(exponent ? superscript(exponent) : '')+'}';
-            });
-            return settings.texNumber(scalar,settings)+' \\, '+units;
+            return settings.texNumber(scalar,settings)+' \\, '+tex_units(units);
         });
+    };
+    jme.display.texOps['quantity'] = function(thing,texArgs,settings) {
+        if(thing.args[1].tok.type=='string') {
+            var units = Qty(thing.args[1].tok.value).format(function(s,units) { return tex_units(units) });
+            return texArgs[0] + ' \\, ' + units;
+        } else {
+            return '\\operatorname{quantity} \\left ( '+texArgs.join(' , ')+' \\right )';
+        }
     };
     jme.display.typeToJME.quantity = function(tree,tok,bits,settings) {
         var scalar = tok.value.format(function(scalar){return Numbas.math.niceNumber(scalar)});
@@ -34,6 +49,12 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
     function quantity_string(q,style) {
         return q.format(function(scalar,units) {
             return Numbas.math.niceNumber(scalar,{style:style})+' '+fix_units(units);
+        }); 
+    }
+
+    function plain_quantity_string(q,style) {
+        return q.format(function(scalar,units) {
+            return Numbas.math.niceNumber(scalar,{style:style})+' '+plain_units(units);
         }); 
     }
 
@@ -155,6 +176,13 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
         // string(quantity, number notation style)
         return quantity_string(q,style);
     });
+    addFunction('plain_string',[TQuantity],TString,function(q){ 
+        return plain_quantity_string(q);
+    });
+    addFunction('plain_string',[TQuantity,TString],TString,function(q,style){ 
+        // string(quantity, number notation style)
+        return plain_quantity_string(q,style);
+    });
     function clean_units(units) {
         return units.map(function(u){return new TString(u.replace(/^<(.*)>$/,'$1'))});
     }
@@ -162,6 +190,7 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
     addFunction('units_denominator',[TQuantity],TList,function(q) { return clean_units(q.denominator); });
     addFunction('units',[TQuantity],TQuantity,function(q) { return Qty(q.units()); });
     addFunction('units_string',[TQuantity],TString,function(q) { return fix_units(q.units()); });
+    addFunction('plain_units_string',[TQuantity],TString,function(q) { return plain_units(q.units()); });
 
     var SIGNATURE_VECTOR = ["length", "time", "temperature", "mass", "current", "substance", "luminosity", "currency", "information", "angle"];
 
