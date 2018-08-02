@@ -130,8 +130,9 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
     addFunction('unitless',[TQuantity],TBool,function(q) { return q.isUnitless(); });
     addFunction('isbase',[TQuantity],TBool,function(q) { return q.isBase(); });
     addFunction('tobase',[TQuantity],TQuantity,function(q) { return q.toBase(); });
-    addFunction('as',[TString,TQuantity],TQuantity,function(unit,q) { return q.to(unit); });
-    addFunction('as',[TQuantity,TQuantity],TQuantity,function(unit,q) { return q.to(unit); });
+    Numbas.jme.addBinaryOperator('as',{precedence: 50});
+    addFunction('as',[TQuantity,TString],TQuantity,function(q,unit) { return q.to(unit); });
+    addFunction('as',[TQuantity,TQuantity],TQuantity,function(q,unit) { return q.to(unit); });
     addFunction('inverse',[TQuantity],TQuantity,function(q) { return q.inverse(); });
     addFunction('same',[TQuantity,TQuantity],TBool,function(a,b) { return a.same(b); });
     addFunction('<',[TQuantity,TQuantity],TBool,function(a,b) { return a.lt(b); });

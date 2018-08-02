@@ -87,15 +87,15 @@ Convert the given quantity to base SI units.
 
 * `tobase(qty(1, "inch"))` → `quantity(0.0254, "m")`
 
-### `as(units, q_from)` or `as(q_to, q_from)`
+### `q_from as units` or `q_from as q_to`
 
 Convert quantity `q_from` to the units specified by the given string, or the same units as `q_to`.
 If the desired units are not compatible with `q_from`, an error is thrown.
 
 **Examples**:
 
-* `as("cm", qty(1.5, "m"))` → `quantity(150, "cm")`
-* `as(qty("kg"), qty(100, "g"))` → `quantity(0.1, "kg")`
+* `qty(1.5, "m") as "cm"` → `quantity(150, "cm")`
+* `qty(100,"g") as qty("kg")` → `quantity(0.1, "kg")`
 
 ### `as_si(quantity)`
 
@@ -201,11 +201,22 @@ The scalar amount of the quantity, as a number - in other words, strip off the u
 ### `string(quantity, [notation style])`
 
 A string representing the given quantity, in the given [notational style](https://docs.numbas.org.uk/en/latest/number-notation.html#styles-of-notation) (plain English is the default)
+The units are presented using "nice" characters: a dot for multiplication, and exponents are displayed in superscript.
 
 **Examples:**
 
 * `string(qty(23, "kg*s^-1"))` → `"23 kg/s"`
-* `string(qty(1000.235, "kg"), "si-fr")` → `"1 000,235 kg"`
+* `string(qty(1000.235, "kg*m^2"), "si-fr")` → `"1 000,235 kg⋅m²"`
+
+### `plain_string(quantity, [notation style])`
+
+A string representing the given quantity, in the given [notational style](https://docs.numbas.org.uk/en/latest/number-notation.html#styles-of-notation) (plain English is the default).
+The units are given in a form that is easy to type: `*` is used for multiplication, and `^` marks an exponent.
+
+**Examples:**
+
+* `plain_string(qty(23, "kg/s"))` → `"23 kg/s"`
+* `plain_string(qty(1000.235, "kg*m^2"), "si-fr")` → `"1 000,235 kg*m^2"`
 
 ### `units_numerator(quantity)` and `units_denominator(quantity)`
 
@@ -232,10 +243,20 @@ Return a quantity representing one unit of the same kind as the given quantity.
 ### `units_string(quantity)`
 
 Return a string describing the units of the given quantity, suitable for display. Powers are displayed in superscript, and **⋅** is used for multiplication.
+The units are presented using "nice" characters: a dot for multiplication, and exponents are displayed in superscript.
 
 **Example:**
 
 * `units_string(qty("kg*cm^2/s^2"))` → `"kg⋅cm²/s²"`
+
+### `plain_units_string(quantity)`
+
+Return a string describing the units of the given quantity, suitable for display. Powers are displayed in superscript, and **⋅** is used for multiplication.
+The units are given in a form that is easy to type: `*` is used for multiplication, and `^` marks an exponent.
+
+**Example:**
+
+* `plain_units_string(qty("kg*cm^2/s^2"))` → `"kg*cm^2/s^2"`
 
 ### `quantity_kinds`
 
