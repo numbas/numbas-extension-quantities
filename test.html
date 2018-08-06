@@ -104,12 +104,15 @@
                 produces('qty(100,"cm") * qty(1,"s")','quantity(100, "cm*s")');
                 produces('5 * quantity(6, "g")','quantity(30, "g")');
                 produces('qty(100,"N") / qty(4,"m^2")','quantity(25, "N/m^2")');
+                produces('+qty(1,"N")','quantity(1, "N")');
+                produces('-qty(1,"N")','quantity(-1, "N")');
                 produces('round(qty(123,"cm"),"1 m")','quantity(100, "cm")');
                 produces('round(qty(0.1697,"m"),qty(5,"cm"))','quantity(0.15, "m")');
                 produces('round(qty(6.32,"kg"))','quantity(6, "kg")');
                 produces('precround(qty(123.456,"cm"), 1)','quantity(123.5, "cm")');
                 produces('siground(qty(123.456,"cm"), 1)','quantity(100, "cm")');
-                produces('abs(qty(53,"s"))','53');
+                produces('abs(qty(-5,"N"))','quantity(5, "N")');
+                produces('scalar(qty(53,"s"))','53');
                 produces('string(qty(23,"kg*s^-1"))','"23 kg/s"');
                 produces('string(qty(1000.235,"kg*m^2"), "si-fr")','"1 000,235 kg⋅m²"');
                 produces('string(qty("kg*cm^2/s^2"))','"1 kg⋅cm²/s²"');

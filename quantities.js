@@ -141,6 +141,8 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
     addFunction('>=',[TQuantity,TQuantity],TBool,function(a,b) { return a.gte(b); });
     addFunction('+',[TQuantity,TQuantity],TQuantity,function(a,b) { return a.add(b); });
     addFunction('-',[TQuantity,TQuantity],TQuantity,function(a,b) { return a.sub(b); });
+    addFunction('+u',[TQuantity],TQuantity,function(q){ return q; });
+    addFunction('-u',[TQuantity],TQuantity,function(q){ return Qty({scalar:-q.scalar, numerator:q.numerator, denominator: q.denominator}); });
     addFunction('*',[TQuantity,TQuantity],TQuantity,function(a,b) { return a.mul(b); });
     addFunction('*',[TNum,TQuantity],TQuantity,function(n,u) { return u.mul(n); });
     addFunction('*',[TQuantity,TNum],TQuantity,function(u,n) { return u.mul(n); });
@@ -150,7 +152,8 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
     addFunction('round',[TQuantity,TString],TQuantity,function(q,precision) { return q.toPrec(precision); });
     addFunction('round',[TQuantity,TQuantity],TQuantity,function(q,precision) { return q.toPrec(precision.toString()); });
     addFunction('round',[TQuantity],TQuantity,function(q){ return q.toPrec(1); });
-    addFunction('abs',[TQuantity],TNum,function(q){ return q.scalar; });
+    addFunction('abs',[TQuantity],TQuantity,function(q){ return Qty({scalar:Math.abs(q.scalar), numerator: q.numerator, denominator: q.denominator}); });
+    addFunction('scalar',[TQuantity],TNum,function(q){ return q.scalar; });
     
     /** Round this quantity's scalar to the given number of decimal places.
      * @param {Quantity} q

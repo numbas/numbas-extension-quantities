@@ -155,6 +155,15 @@ When multiplying or dividing, units are not automatically converted to their com
 * `qty(100, "cm") * qty(1, "s")` → `quantity(100, "cm*s")`
 * `qty(100, "N") / qty(4, "m^2")` → `quantity(25, "N/m^2")`
 
+### `-q`
+
+The negative of the given quantity.
+
+
+**Example:**
+
+* `-qty(1,"N")` → `quantity(-1, "N")`
+
 ### `n * quantity` or `quantity * n`
 
 Multiply a quantity by a scalar.
@@ -192,11 +201,19 @@ Round `quantity` to `sf` significant figures.
 
 ### `abs(quantity)`
 
+The absolute value of the quantity.
+
+**Example:**
+
+* `abs(qty(-5, "N"))` → `quantity(5, "N")`
+
+### `scalar(quantity)`
+
 The scalar amount of the quantity, as a number - in other words, strip off the units information.
 
 **Example:**
 
-* `abs(qty(53, "s"))` → `53`
+* `scalar(qty(53, "s"))` → `53`
 
 ### `string(quantity, [notation style])`
 
