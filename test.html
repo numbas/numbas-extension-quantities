@@ -112,6 +112,9 @@
                 produces('precround(qty(123.456,"cm"), 1)','quantity(123.5, "cm")');
                 produces('siground(qty(123.456,"cm"), 1)','quantity(100, "cm")');
                 produces('abs(qty(-5,"N"))','quantity(5, "N")');
+                produces('sign(qty(20,"kg"))','1');
+                produces('sign(qty(-10,"kg"))','-1');
+                produces('sign(qty(0,"kg"))','0');
                 produces('scalar(qty(53,"s"))','53');
                 produces('string(qty(23,"kg*s^-1"))','"23 kg/s"');
                 produces('string(qty(1000.235,"kg*m^2"), "si-fr")','"1 000,235 kg⋅m²"');

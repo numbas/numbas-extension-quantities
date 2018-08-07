@@ -215,6 +215,16 @@ The scalar amount of the quantity, as a number - in other words, strip off the u
 
 * `scalar(qty(53, "s"))` → `53`
 
+### `sign(quantity)`
+
+Returns 1 if the quantity is positive, -1 if it's negative, and 0 otherwise.
+
+**Examples:**
+
+* `sign(qty(20,"kg"))` → `1`
+* `sign(qty(-10,"kg"))` → `-1`
+* `sign(qty(0,"kg"))` → `0`
+
 ### `string(quantity, [notation style])`
 
 A string representing the given quantity, in the given [notational style](https://docs.numbas.org.uk/en/latest/number-notation.html#styles-of-notation) (plain English is the default)

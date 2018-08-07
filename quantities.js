@@ -153,6 +153,7 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
     addFunction('round',[TQuantity,TQuantity],TQuantity,function(q,precision) { return q.toPrec(precision.toString()); });
     addFunction('round',[TQuantity],TQuantity,function(q){ return q.toPrec(1); });
     addFunction('abs',[TQuantity],TQuantity,function(q){ return Qty({scalar:Math.abs(q.scalar), numerator: q.numerator, denominator: q.denominator}); });
+    addFunction('sign',[TQuantity],TNum,function(q) { return Numbas.math.sign(q.scalar); });
     addFunction('scalar',[TQuantity],TNum,function(q){ return q.scalar; });
     
     /** Round this quantity's scalar to the given number of decimal places.
