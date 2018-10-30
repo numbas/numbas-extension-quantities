@@ -51,9 +51,11 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
     }
 
     function tex_units(units) {
-        return units.replace(/([a-zA-Z]+)(\d+)?/g, function(s,name,exponent) {
+        units = units.replace(/([a-zA-Z]+)(\d+)?/g, function(s,name,exponent) {
             return '\\text{'+fix_unit_name(name)+(exponent ? superscript(exponent) : '')+'}';
         });
+        units = units.replace(/\*/g,' \\cdot ');
+        return units;
     }
 
     jme.display.typeToTeX.quantity = function(thing,tok,texArgs,settings) {
