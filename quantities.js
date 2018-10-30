@@ -11,19 +11,48 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
     };
     TQuantity.prototype.type = 'quantity';
 
+    var unit_names = {
+        'tempC': '°C',
+        'degC': '°C',
+        'tempF': '°F',
+        'degF': '°F',
+        'tempK': '°K',
+        'degK': '°K'
+    }
+
+    function fix_unit_name(name) {
+        return unit_names[name] || name;
+    }
+
+    /** Fix the rendering of a units string, for display in plain text.
+     *  js-quantities writes 'kg^2' as 'kg2', and doesn't expose the output names of units, so we can't write our own formatter
+     *  so instead, assume that digits never appear in the names of units, and apply this regex
+     */
     function fix_units(units) {
-        // js-quantities writes 'kg^2' as 'kg2', and doesn't expose the output names of units, so we can't write our own formatter
-        // so instead, assume that digits never appear in the names of units, and apply this regex
-        return units.replace(/\*/g,'⋅').replace(/(\D)(-?\d+)/g,function(m,name,exponent) { return name+superscript(exponent); });
+        var m = /([^\/]+)(?:\/(.*))?/.exec(units);
+        function fix_prod(units) {
+            var bits = units.split('*').map(function(b) {
+                return b.replace(/(\D+)(-?\d+)?/g,function(m,name,exponent) { 
+                    return fix_unit_name(name)+(exponent ? superscript(exponent) : ''); 
+                });
+            });
+
+            return bits.join('⋅');
+        }
+        var out = fix_prod(m[1]);
+        if(m[2]) {
+            out += '/'+fix_prod(m[2]);
+        }
+        return out;
     }
 
     function plain_units(units) {
-        return units.replace(/(\D)(-?\d+)/g,function(m,name,exponent) { return name+'^'+exponent; });
+        return units.replace(/(\D)(-?\d+)/g,function(m,name,exponent) { return fix_unit_name(name)+'^'+exponent; });
     }
 
     function tex_units(units) {
         return units.replace(/([a-zA-Z]+)(\d+)?/g, function(s,name,exponent) {
-            return '\\text{'+name+(exponent ? superscript(exponent) : '')+'}';
+            return '\\text{'+fix_unit_name(name)+(exponent ? superscript(exponent) : '')+'}';
         });
     }
 
@@ -42,7 +71,7 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
     };
     jme.display.typeToJME.quantity = function(tree,tok,bits,settings) {
         var scalar = tok.value.format(function(scalar){return Numbas.math.niceNumber(scalar)});
-        var units = tok.value.format(function(scalar,units) { return units.replace(/(\D)(\d+)/g,'$1^$2'); });
+        var units = tok.value.format(function(scalar,units) { return units.replace(/(\D+?)(\d+)/g,'$1^$2'); });
         return 'quantity('+scalar+', "'+jme.escape(units)+'")';
     }
 
