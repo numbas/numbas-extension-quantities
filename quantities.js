@@ -16,8 +16,8 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
         'degC': '°C',
         'tempF': '°F',
         'degF': '°F',
-        'tempK': '°K',
-        'degK': '°K'
+        'tempK': 'K',
+        'degK': 'K'
     }
 
     function fix_unit_name(name) {
