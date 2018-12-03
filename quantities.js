@@ -29,6 +29,8 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
      *  so instead, assume that digits never appear in the names of units, and apply this regex
      */
     function fix_units(units) {
+        if (! units) {return ""};
+
         var m = /([^\/]+)(?:\/(.*))?/.exec(units);
         function fix_prod(units) {
             var bits = units.split('*').map(function(b) {
