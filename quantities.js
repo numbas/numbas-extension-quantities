@@ -29,7 +29,7 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
      *  so instead, assume that digits never appear in the names of units, and apply this regex
      */
     function fix_units(units) {
-        var m = /([^\/]+)(?:\/(.*))?/.exec(units);
+        var m = /([^\/]+)?(?:\/(.*))?/.exec(units);
         function fix_prod(units) {
             var bits = units.split('*').map(function(b) {
                 return b.replace(/(\D+)(-?\d+)?/g,function(m,name,exponent) { 
@@ -39,7 +39,7 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
 
             return bits.join('⋅');
         }
-        var out = fix_prod(m[1]);
+        var out = fix_prod(m[1] || '');
         if(m[2]) {
             out += '/'+fix_prod(m[2]);
         }
@@ -79,7 +79,9 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
 
     function quantity_string(q,style) {
         return q.format(function(scalar,units) {
-            return Numbas.math.niceNumber(scalar,{style:style})+' '+fix_units(units);
+            var scalar_display = Numbas.math.niceNumber(scalar,{style:style});
+            var units_display = fix_units(units);
+            return scalar_display+(units_display ? ' '+units_display : '');
         }); 
     }
 
@@ -344,8 +346,6 @@ Numbas.queueScript('js-quantities',[],function() {
     var exports = {};
     var module = {};
 
-// js-quantities v1.7.2
-// from https://github.com/gentooboontoo/js-quantities
 /*
 The MIT License (MIT)
 Copyright © 2006-2007 Kevin C. Olbrich
@@ -373,7 +373,7 @@ SOFTWARE.
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
   typeof define === 'function' && define.amd ? define(factory) :
   (global.Qty = factory());
-}(window, (function () {
+}(this, (function () { 'use strict';
 
   /**
    * Tests if a value is a string
@@ -1838,9 +1838,9 @@ SOFTWARE.
       if (op1.isCompatible(op2) && op1.signature !== 400) {
         op2 = op2.to(op1);
       }
-      var numden = cleanTerms(op1.numerator.concat(op2.numerator), op1.denominator.concat(op2.denominator));
+      var numdenscale = cleanTerms(op1.numerator, op1.denominator, op2.numerator, op2.denominator);
 
-      return Qty({"scalar": mulSafe(op1.scalar, op2.scalar), "numerator": numden[0], "denominator": numden[1]});
+      return Qty({"scalar": mulSafe(op1.scalar, op2.scalar, numdenscale[2]), "numerator": numdenscale[0], "denominator": numdenscale[1]});
     },
 
     div: function(other) {
@@ -1874,9 +1874,9 @@ SOFTWARE.
       if (op1.isCompatible(op2) && op1.signature !== 400) {
         op2 = op2.to(op1);
       }
-      var numden = cleanTerms(op1.numerator.concat(op2.denominator), op1.denominator.concat(op2.numerator));
+      var numdenscale = cleanTerms(op1.numerator, op1.denominator, op2.denominator, op2.numerator);
 
-      return Qty({"scalar": op1.scalar / op2.scalar, "numerator": numden[0], "denominator": numden[1]});
+      return Qty({"scalar": mulSafe(op1.scalar, numdenscale[2]) / op2.scalar, "numerator": numdenscale[0], "denominator": numdenscale[1]});
     },
 
     // Returns a Qty that is the inverse of this Qty,
@@ -1891,55 +1891,55 @@ SOFTWARE.
     }
   });
 
-  function cleanTerms(num, den) {
-    num = num.filter(function(val) {
+  function cleanTerms(num1, den1, num2, den2) {
+    function notUnity(val) {
       return val !== UNITY;
-    });
-    den = den.filter(function(val) {
-      return val !== UNITY;
-    });
+    }
+
+    num1 = num1.filter(notUnity);
+    num2 = num2.filter(notUnity);
+    den1 = den1.filter(notUnity);
+    den2 = den2.filter(notUnity);
 
     var combined = {};
 
-    var k;
-    for (var i = 0; i < num.length; i++) {
-      if (PREFIX_VALUES[num[i]]) {
-        k = [num[i], num[i + 1]];
-        i++;
-      }
-      else {
-        k = num[i];
-      }
-      if (k && k !== UNITY) {
-        if (combined[k]) {
-          combined[k][0]++;
+    function combineTerms(terms, direction) {
+      var k;
+      var prefix;
+      var prefixValue;
+      for (var i = 0; i < terms.length; i++) {
+        if (PREFIX_VALUES[terms[i]]) {
+          k = terms[i + 1];
+          prefix = terms[i];
+          prefixValue = PREFIX_VALUES[prefix];
+          i++;
         }
         else {
-          combined[k] = [1, k];
+          k = terms[i];
+          prefix = null;
+          prefixValue = 1;
+        }
+        if (k && k !== UNITY) {
+          if (combined[k]) {
+            combined[k][0] += direction;
+            var combinedPrefixValue = combined[k][2] ? PREFIX_VALUES[combined[k][2]] : 1;
+            combined[k][direction === 1 ? 3 : 4] *= divSafe(prefixValue, combinedPrefixValue);
+          }
+          else {
+            combined[k] = [direction, k, prefix, 1, 1];
+          }
         }
       }
     }
 
-    for (var j = 0; j < den.length; j++) {
-      if (PREFIX_VALUES[den[j]]) {
-        k = [den[j], den[j + 1]];
-        j++;
-      }
-      else {
-        k = den[j];
-      }
-      if (k && k !== UNITY) {
-        if (combined[k]) {
-          combined[k][0]--;
-        }
-        else {
-          combined[k] = [-1, k];
-        }
-      }
-    }
+    combineTerms(num1, 1);
+    combineTerms(den1, -1);
+    combineTerms(num2, 1);
+    combineTerms(den2, -1);
 
-    num = [];
-    den = [];
+    var num = [];
+    var den = [];
+    var scale = 1;
 
     for (var prop in combined) {
       if (combined.hasOwnProperty(prop)) {
@@ -1947,14 +1947,15 @@ SOFTWARE.
         var n;
         if (item[0] > 0) {
           for (n = 0; n < item[0]; n++) {
-            num.push(item[1]);
+            num.push(item[2] === null ? item[1] : [item[2], item[1]]);
           }
         }
         else if (item[0] < 0) {
           for (n = 0; n < -item[0]; n++) {
-            den.push(item[1]);
+            den.push(item[2] === null ? item[1] : [item[2], item[1]]);
           }
         }
+        scale *= divSafe(item[3], item[4]);
       }
     }
 
@@ -1973,7 +1974,7 @@ SOFTWARE.
       return a.concat(b);
     }, []);
 
-    return [num, den];
+    return [num, den, scale];
   }
 
   assign(Qty.prototype, {
@@ -2344,11 +2345,10 @@ SOFTWARE.
     });
   }
 
-  Qty.version = "1.7.2";
+  Qty.version = "1.7.3";
 
   return Qty;
 
 })));
-
     window.Qty = module.exports;
 });

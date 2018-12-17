@@ -133,6 +133,7 @@
                 produces('plain_units_string(qty("kg*cm^2/s^2"))','"kg*cm^2/s^2"');
                 produces('sort([qty(1,"cm"),qty(1,"km"),qty(1,"m")])','[ quantity(1, "cm"), quantity(1, "m"), quantity(1, "km") ]');
                 produces('string(qty(1,"J/kg * degK"))','"1 J/kg⋅K"');
+                produces('string(1/quantity(1,"m")*quantity(1,"cm"))','"0.01"');
             });
         </script>
     </body>
