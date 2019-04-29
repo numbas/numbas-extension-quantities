@@ -86,8 +86,8 @@
                 produces('isbase(qty("kg"))','true');
                 produces('isbase(qty("lb"))','false');
                 produces('tobase(qty(1,"inch"))','quantity(0.0254, "m")');
-                produces('qty(1.5,"m") as "cm"','quantity(150, "cm")');
-                produces('qty(100,"g") as qty("kg")','quantity(0.1, "kg")');
+                produces('qty(1.5,"m") in "cm"','quantity(150, "cm")');
+                produces('qty(100,"g") in qty("kg")','quantity(0.1, "kg")');
                 produces('as_si(quantity(1,"lb*ft"))','quantity(0.1382549544, "m*kg")');
                 produces('inverse(qty(2,"m/s"))','quantity(0.5, "s/m")');
                 produces('same(qty(1,"m"),qty(100,"cm"))','false');
@@ -115,7 +115,7 @@
                 produces('sign(qty(20,"kg"))','1');
                 produces('sign(qty(-10,"kg"))','-1');
                 produces('sign(qty(0,"kg"))','0');
-                produces('scalar(qty(53,"s"))','53');
+                produces('scalar(qty(53,"s"))','dec(53)');
                 produces('string(qty(23,"kg*s^-1"))','"23 kg/s"');
                 produces('string(qty(1000.235,"kg*m^2"), "si-fr")','"1 000,235 kg⋅m²"');
                 produces('string(qty("kg*cm^2/s^2"))','"1 kg⋅cm²/s²"');

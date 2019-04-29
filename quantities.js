@@ -105,6 +105,8 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
 	var funcObj = jme.funcObj;
 	var TString = jme.types.TString;
 	var TNum = jme.types.TNum;
+    var TDecimal = jme.types.TDecimal;
+    var TInt = jme.types.TInt;
 	var TList = jme.types.TList;
 	var TBool = jme.types.TBool;
 
@@ -123,7 +125,7 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
 
     jme.funcSynonyms['qty'] = 'quantity';
     addFunction('quantity',[TString],TQuantity,function(q) { return unit_quantity(q); });
-    addFunction('quantity',[TNum,TString],TQuantity,function(n,q) { return unit_quantity(q).mul(n); });
+    addFunction('quantity',[TDecimal,TString],TQuantity,function(n,q) { return unit_quantity(q).mul(n); });
     addFunction('units_of_kind',[TString],TList,function(kind) { 
         if(kind=='unitless') {
             return [''];
@@ -163,9 +165,8 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
     addFunction('unitless',[TQuantity],TBool,function(q) { return q.isUnitless(); });
     addFunction('isbase',[TQuantity],TBool,function(q) { return q.isBase(); });
     addFunction('tobase',[TQuantity],TQuantity,function(q) { return q.toBase(); });
-    Numbas.jme.addBinaryOperator('as',{precedence: 50});
-    addFunction('as',[TQuantity,TString],TQuantity,function(q,unit) { return q.to(unit); });
-    addFunction('as',[TQuantity,TQuantity],TQuantity,function(q,unit) { return q.to(unit); });
+    addFunction('in',[TQuantity,TString],TQuantity,function(q,unit) { return q.to(unit); });
+    addFunction('in',[TQuantity,TQuantity],TQuantity,function(q,unit) { return q.to(unit); });
     addFunction('inverse',[TQuantity],TQuantity,function(q) { return q.inverse(); });
     addFunction('same',[TQuantity,TQuantity],TBool,function(a,b) { return a.same(b); });
     addFunction('<',[TQuantity,TQuantity],TBool,function(a,b) { return a.lt(b); });
@@ -177,17 +178,17 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
     addFunction('+u',[TQuantity],TQuantity,function(q){ return q; });
     addFunction('-u',[TQuantity],TQuantity,function(q){ return Qty({scalar:-q.scalar, numerator:q.numerator, denominator: q.denominator}); });
     addFunction('*',[TQuantity,TQuantity],TQuantity,function(a,b) { return a.mul(b); });
-    addFunction('*',[TNum,TQuantity],TQuantity,function(n,u) { return u.mul(n); });
-    addFunction('*',[TQuantity,TNum],TQuantity,function(u,n) { return u.mul(n); });
+    addFunction('*',[TDecimal,TQuantity],TQuantity,function(n,u) { return u.mul(n); });
+    addFunction('*',[TQuantity,TDecimal],TQuantity,function(u,n) { return u.mul(n); });
     addFunction('/',[TQuantity,TQuantity],TQuantity,function(a,b) { return a.div(b); });
-    addFunction('/',[TQuantity,TNum],TQuantity,function(u,n) { return u.div(n); });
-    addFunction('/',[TNum,TQuantity],TQuantity,function(n,u) { return u.inverse().mul(n); });
+    addFunction('/',[TQuantity,TDecimal],TQuantity,function(u,n) { return u.div(n); });
+    addFunction('/',[TDecimal,TQuantity],TQuantity,function(n,u) { return u.inverse().mul(n); });
     addFunction('round',[TQuantity,TString],TQuantity,function(q,precision) { return q.toPrec(precision); });
     addFunction('round',[TQuantity,TQuantity],TQuantity,function(q,precision) { return q.toPrec(precision.toString()); });
     addFunction('round',[TQuantity],TQuantity,function(q){ return q.toPrec(1); });
     addFunction('abs',[TQuantity],TQuantity,function(q){ return Qty({scalar:Math.abs(q.scalar), numerator: q.numerator, denominator: q.denominator}); });
-    addFunction('sign',[TQuantity],TNum,function(q) { return Numbas.math.sign(q.scalar); });
-    addFunction('scalar',[TQuantity],TNum,function(q){ return q.scalar; });
+    addFunction('sign',[TQuantity],TNum,function(q) { return Decimal.sign(q.scalar.toDecimal()); });
+    addFunction('scalar',[TQuantity],TDecimal,function(q){ return q.scalar.toDecimal(); });
     
     /** Round this quantity's scalar to the given number of decimal places.
      * @param {Quantity} q
@@ -196,7 +197,7 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
      */
     quantities.precround = function(q,dp) {
         var v = q.scalar;
-        return Qty({scalar: Numbas.math.precround(v,dp), numerator: q.numerator, denominator: q.denominator});
+        return Qty({scalar: v.toDecimalPlaces(dp), numerator: q.numerator, denominator: q.denominator});
     }
     /** Round this quantity's scalar to the given number of significant figures.
      * @param {Quantity} q
@@ -205,7 +206,7 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
      */
     quantities.siground = function(q,dp) {
         var v = q.scalar;
-        return Qty({scalar: Numbas.math.siground(v,dp), numerator: q.numerator, denominator: q.denominator});
+        return Qty({scalar: v.toSignificantDigits(dp), numerator: q.numerator, denominator: q.denominator});
     }
     addFunction('precround',[TQuantity,TNum], TQuantity, quantities.precround);
     addFunction('siground',[TQuantity,TNum], TQuantity, quantities.siground);
@@ -391,7 +392,8 @@ SOFTWARE.
    * To be dropped when ES6 is finalized. Obsolete browsers will
    * have to use ES6 polyfills.
    */
-  var isFiniteImpl = Number.isFinite || window.isFinite;
+  const isFiniteImpl = Number.isFinite || window.isFinite;
+
   /**
    * Tests if a value is a number
    *
@@ -514,6 +516,242 @@ SOFTWARE.
     return count;
   }
 
+  const fields = {};
+
+  const NumberField = fields.NumberField = {
+
+    isMember: (n) => isNumber(n),
+
+    fromString: (s) => parseFloat(s),
+
+    fromNumber: (n) => n,
+
+    toNumber: (n) => n,
+
+    one: () => 1,
+
+    zero: () => 0,
+
+    add: (a,b) => a + b,
+
+    sub: (a,b) => a - b,
+
+    mul: (a,b) => a * b,
+
+    mulSafe: function() {
+      return mulSafe.apply(this,arguments);
+    },
+
+    div: (a,b) => a / b,
+
+    divSafe: divSafe,
+
+    inverse: (n) => 1 / n,
+
+    isExactlyZero: (n) => n === 0,
+
+    round: Math.round,
+
+    roundTo: round,
+
+    lt: (a,b) => a < b,
+
+    gt: (a,b) => a > b,
+
+    eq: (a,b) => a === b,
+
+    pow: Math.pow,
+
+    PI: Math.PI,
+
+    abs: Math.abs
+  };
+
+  let Field = NumberField;
+
+  try {
+      class DecimalFraction {
+        constructor(n,d) {
+          if (!Decimal.isDecimal(n)) {
+            n = new Decimal(n);
+          }
+          if (!Decimal.isDecimal(d)) {
+            d = new Decimal(d);
+          }
+          this.n = n;
+          this.d = d;
+        }
+
+        toString() {
+          return this.toDecimal().toString();
+        }
+
+        toDecimal() {
+          if (this.d.eq(1)) {
+            return this.n;
+          }
+          else {
+            return this.n.div(this.d);
+          }
+        }
+
+        plus(b) {
+          return new DecimalFraction(this.n.mul(b.d).add(b.n.mul(this.d)),this.d.mul(b.d));
+        }
+
+        minus(b) {
+          return new DecimalFraction(this.n.mul(b.d).sub(b.n.mul(this.d)),this.d.mul(b.d));
+        }
+
+        times(b) {
+          return new DecimalFraction(this.n.mul(b.n), this.d.mul(b.d));
+        }
+
+        dividedBy(b) {
+          return new DecimalFraction(this.n.mul(b.d), this.d.mul(b.n));
+        }
+
+        inverse() {
+          return new DecimalFraction(this.d,this.n);
+        }
+
+        isZero() {
+          return this.n.isZero();
+        }
+
+        round() {
+          return new DecimalFraction(this.toDecimal().round(), new Decimal(1));
+        }
+
+        toDecimalPlaces(decimals) {
+          return new DecimalFraction(this.toDecimal().toDecimalPlaces(decimals), new Decimal(1));
+        }
+
+        toSignificantDigits(digits) {
+          return new DecimalFraction(this.toDecimal().toSignificantDigits(digits), new Decimal(1));
+        }
+
+        lessThan(b) {
+          return this.toDecimal().lessThan(b.toDecimal());
+        }
+
+        greaterThan(b) {
+          return this.toDecimal().greaterThan(b.toDecimal());
+        }
+
+        equals(b) {
+          return this.toDecimal().equals(b.toDecimal());
+        }
+
+        toPower(b) {
+          return new DecimalFraction(this.n.toPower(b.toDecimal()), this.d.toPower(b.toDecimal()));
+        }
+
+        abs() {
+          return new DecimalFraction(this.n.absoluteValue(), this.d.absoluteValue());
+        }
+      }
+
+      function fr(n) {
+          if(!(n instanceof DecimalFraction)) {
+              return new DecimalFraction(n,1);
+          }
+          return n;
+      }
+
+      const DecimalOne = new DecimalFraction(1,1);
+      const DecimalZero = new DecimalFraction(0,1);
+      const DecimalField = fields.DecimalField = {
+
+        isMember: (n) => {
+          return n instanceof DecimalFraction || n instanceof Decimal;
+        },
+
+        fromString: (s) => {
+          return new DecimalFraction(new Decimal(s), 1);
+        },
+
+        fromNumber: (n) => {
+          return (new DecimalFraction(n,1)).toDecimalPlaces(12);
+        },
+
+        toNumber: (n) => {
+          return n.toDecimal().toNumber();
+        },
+
+        one: () => {
+          return DecimalOne;
+        },
+
+        zero: () => {
+          return DecimalZero;
+        },
+
+        add: (a,b) => {
+          return fr(a).plus(fr(b));
+        },
+
+        sub: (a,b) => {
+          return fr(a).minus(fr(b));
+        },
+
+        mul: function() {
+          let result = DecimalOne;
+          for (var i = 0; i < arguments.length; i++) {
+            result = result.times(fr(arguments[i]));
+          }
+          return result;
+        },
+
+        div: (a,b) => {
+          return fr(a).dividedBy(fr(b));
+        },
+
+        inverse: (n) => {
+          return fr(n).inverse();
+        },
+
+        isExactlyZero: (n) => {
+          return fr(n).isZero();
+        },
+
+        round: (n) => {
+          return fr(n).round();
+        },
+
+        roundTo: (n,decimals) => {
+          return fr(n).toDecimalPlaces(decimals);
+        },
+
+        lt: (a,b) => {
+          return fr(a).lessThan(fr(b));
+        },
+
+        gt: (a,b) => {
+          return fr(a).greaterThan(fr(b));
+        },
+
+        eq: (a,b) => {
+          return fr(a).equals(fr(b));
+        },
+
+        pow: (a,b) => {
+          return fr(a).toPower(fr(b));
+        },
+
+        abs: (n) => {
+          return fr(n).abs();
+        },
+
+        PI: new DecimalFraction(Decimal.acos(-1),1),
+      };
+      DecimalField.divSafe = DecimalField.div;
+      DecimalField.mulSafe = DecimalField.mul;
+
+      Field = DecimalField;
+  } catch(e) {
+  }
+
   /**
    * Custom error type definition
    * @constructor
@@ -542,10 +780,13 @@ SOFTWARE.
     throw new QtyError("Incompatible units: " + left + " and " + right);
   }
 
+  const n = Field.fromNumber;
+  const { PI, pow, mul, div } = Field;
+
   var UNITS = {
     /* prefixes */
     "<googol>" : [["googol"], 1e100, "prefix"],
-    "<kibi>"  :  [["Ki","Kibi","kibi"], Math.pow(2,10), "prefix"],
+    "<kibi>"  :  [["Ki","Kibi","kibi"], pow(n(2),n(10)), "prefix"],
     "<mebi>"  :  [["Mi","Mebi","mebi"], Math.pow(2,20), "prefix"],
     "<gibi>"  :  [["Gi","Gibi","gibi"], Math.pow(2,30), "prefix"],
     "<tebi>"  :  [["Ti","Tebi","tebi"], Math.pow(2,40), "prefix"],
@@ -553,256 +794,256 @@ SOFTWARE.
     "<exi>"   :  [["Ei","Exi","exi"], Math.pow(2,60), "prefix"],
     "<zebi>"  :  [["Zi","Zebi","zebi"], Math.pow(2,70), "prefix"],
     "<yebi>"  :  [["Yi","Yebi","yebi"], Math.pow(2,80), "prefix"],
-    "<yotta>" :  [["Y","Yotta","yotta"], 1e24, "prefix"],
-    "<zetta>" :  [["Z","Zetta","zetta"], 1e21, "prefix"],
-    "<exa>"   :  [["E","Exa","exa"], 1e18, "prefix"],
-    "<peta>"  :  [["P","Peta","peta"], 1e15, "prefix"],
-    "<tera>"  :  [["T","Tera","tera"], 1e12, "prefix"],
-    "<giga>"  :  [["G","Giga","giga"], 1e9, "prefix"],
-    "<mega>"  :  [["M","Mega","mega"], 1e6, "prefix"],
-    "<kilo>"  :  [["k","kilo"], 1e3, "prefix"],
-    "<hecto>" :  [["h","Hecto","hecto"], 1e2, "prefix"],
-    "<deca>"  :  [["da","Deca","deca","deka"], 1e1, "prefix"],
-    "<deci>"  :  [["d","Deci","deci"], 1e-1, "prefix"],
-    "<centi>"  : [["c","Centi","centi"], 1e-2, "prefix"],
-    "<milli>" :  [["m","Milli","milli"], 1e-3, "prefix"],
+    "<yotta>" :  [["Y","Yotta","yotta"], n(1e24), "prefix"],
+    "<zetta>" :  [["Z","Zetta","zetta"], n(1e21), "prefix"],
+    "<exa>"   :  [["E","Exa","exa"], n(1e18), "prefix"],
+    "<peta>"  :  [["P","Peta","peta"], n(1e15), "prefix"],
+    "<tera>"  :  [["T","Tera","tera"], n(1e12), "prefix"],
+    "<giga>"  :  [["G","Giga","giga"], n(1e9), "prefix"],
+    "<mega>"  :  [["M","Mega","mega"], n(1e6), "prefix"],
+    "<kilo>"  :  [["k","kilo"], n(1e3), "prefix"],
+    "<hecto>" :  [["h","Hecto","hecto"], n(1e2), "prefix"],
+    "<deca>"  :  [["da","Deca","deca","deka"], n(1e1), "prefix"],
+    "<deci>"  :  [["d","Deci","deci"], n(1e-1), "prefix"],
+    "<centi>"  : [["c","Centi","centi"], n(1e-2), "prefix"],
+    "<milli>" :  [["m","Milli","milli"], n(1e-3), "prefix"],
     "<micro>"  : [
       ["u","\u03BC"/*µ as greek letter*/,"\u00B5"/*µ as micro sign*/,"Micro","mc","micro"],
-      1e-6,
+      n(1e-6),
       "prefix"
     ],
-    "<nano>"  :  [["n","Nano","nano"], 1e-9, "prefix"],
-    "<pico>"  :  [["p","Pico","pico"], 1e-12, "prefix"],
-    "<femto>" :  [["f","Femto","femto"], 1e-15, "prefix"],
-    "<atto>"  :  [["a","Atto","atto"], 1e-18, "prefix"],
-    "<zepto>" :  [["z","Zepto","zepto"], 1e-21, "prefix"],
-    "<yocto>" :  [["y","Yocto","yocto"], 1e-24, "prefix"],
+    "<nano>"  :  [["n","Nano","nano"], n(1e-9), "prefix"],
+    "<pico>"  :  [["p","Pico","pico"], n(1e-12), "prefix"],
+    "<femto>" :  [["f","Femto","femto"], n(1e-15), "prefix"],
+    "<atto>"  :  [["a","Atto","atto"], n(1e-18), "prefix"],
+    "<zepto>" :  [["z","Zepto","zepto"], n(1e-21), "prefix"],
+    "<yocto>" :  [["y","Yocto","yocto"], n(1e-24), "prefix"],
 
-    "<1>"     :  [["1", "<1>"], 1, ""],
+    "<1>"     :  [["1", "<1>"], n(1), ""],
     /* length units */
-    "<meter>" :  [["m","meter","meters","metre","metres"], 1.0, "length", ["<meter>"] ],
-    "<inch>"  :  [["in","inch","inches","\""], 0.0254, "length", ["<meter>"]],
-    "<foot>"  :  [["ft","foot","feet","'"], 0.3048, "length", ["<meter>"]],
-    "<yard>"  :  [["yd","yard","yards"], 0.9144, "length", ["<meter>"]],
-    "<mile>"  :  [["mi","mile","miles"], 1609.344, "length", ["<meter>"]],
-    "<naut-mile>" : [["nmi","naut-mile"], 1852, "length", ["<meter>"]],
-    "<league>":  [["league","leagues"], 4828, "length", ["<meter>"]],
-    "<furlong>": [["furlong","furlongs"], 201.2, "length", ["<meter>"]],
-    "<rod>"   :  [["rd","rod","rods"], 5.029, "length", ["<meter>"]],
-    "<mil>"   :  [["mil","mils"], 0.0000254, "length", ["<meter>"]],
-    "<angstrom>"  :[["ang","angstrom","angstroms"], 1e-10, "length", ["<meter>"]],
-    "<fathom>" : [["fathom","fathoms"], 1.829, "length", ["<meter>"]],
-    "<pica>"  : [["pica","picas"], 0.00423333333, "length", ["<meter>"]],
-    "<point>" : [["pt","point","points"], 0.000352777778, "length", ["<meter>"]],
-    "<redshift>" : [["z","red-shift", "redshift"], 1.302773e26, "length", ["<meter>"]],
-    "<AU>"    : [["AU","astronomical-unit"], 149597900000, "length", ["<meter>"]],
-    "<light-second>":[["ls","light-second"], 299792500, "length", ["<meter>"]],
-    "<light-minute>":[["lmin","light-minute"], 17987550000, "length", ["<meter>"]],
-    "<light-year>" : [["ly","light-year"], 9460528000000000, "length", ["<meter>"]],
-    "<parsec>"  : [["pc","parsec","parsecs"], 30856780000000000, "length", ["<meter>"]],
-    "<datamile>"  :  [["DM","datamile"], 1828.8, "length", ["<meter>"]],
+    "<meter>" :  [["m","meter","meters","metre","metres"], n(1.0), "length", ["<meter>"] ],
+    "<inch>"  :  [["in","inch","inches","\""], n(0.0254), "length", ["<meter>"]],
+    "<foot>"  :  [["ft","foot","feet","'"], n(0.3048), "length", ["<meter>"]],
+    "<yard>"  :  [["yd","yard","yards"], n(0.9144), "length", ["<meter>"]],
+    "<mile>"  :  [["mi","mile","miles"], n(1609.344), "length", ["<meter>"]],
+    "<naut-mile>" : [["nmi","naut-mile"], n(1852), "length", ["<meter>"]],
+    "<league>":  [["league","leagues"], n(4828), "length", ["<meter>"]],
+    "<furlong>": [["furlong","furlongs"], n(201.2), "length", ["<meter>"]],
+    "<rod>"   :  [["rd","rod","rods"], n(5.029), "length", ["<meter>"]],
+    "<mil>"   :  [["mil","mils"], n(0.0000254), "length", ["<meter>"]],
+    "<angstrom>"  :[["ang","angstrom","angstroms"], n(1e-10), "length", ["<meter>"]],
+    "<fathom>" : [["fathom","fathoms"], n(1.829), "length", ["<meter>"]],
+    "<pica>"  : [["pica","picas"], n(0.00423333333), "length", ["<meter>"]],
+    "<point>" : [["pt","point","points"], n(0.000352777778), "length", ["<meter>"]],
+    "<redshift>" : [["z","red-shift", "redshift"], n(1.302773e26), "length", ["<meter>"]],
+    "<AU>"    : [["AU","astronomical-unit"], n(149597900000), "length", ["<meter>"]],
+    "<light-second>":[["ls","light-second"], n(299792500), "length", ["<meter>"]],
+    "<light-minute>":[["lmin","light-minute"], n(17987550000), "length", ["<meter>"]],
+    "<light-year>" : [["ly","light-year"], n(9460528000000000), "length", ["<meter>"]],
+    "<parsec>"  : [["pc","parsec","parsecs"], n(30856780000000000), "length", ["<meter>"]],
+    "<datamile>"  :  [["DM","datamile"], n(1828.8), "length", ["<meter>"]],
 
     /* mass */
-    "<kilogram>" : [["kg","kilogram","kilograms"], 1.0, "mass", ["<kilogram>"]],
-    "<AMU>" : [["u","AMU","amu"], 1.660538921e-27, "mass", ["<kilogram>"]],
-    "<dalton>" : [["Da","Dalton","Daltons","dalton","daltons"], 1.660538921e-27, "mass", ["<kilogram>"]],
-    "<slug>" : [["slug","slugs"], 14.5939029, "mass", ["<kilogram>"]],
-    "<short-ton>" : [["tn","ton","short-ton"], 907.18474, "mass", ["<kilogram>"]],
-    "<metric-ton>":[["tonne","metric-ton"], 1000, "mass", ["<kilogram>"]],
-    "<carat>" : [["ct","carat","carats"], 0.0002, "mass", ["<kilogram>"]],
-    "<pound>" : [["lbs","lb","pound","pounds","#"], 0.45359237, "mass", ["<kilogram>"]],
-    "<ounce>" : [["oz","ounce","ounces"], 0.0283495231, "mass", ["<kilogram>"]],
-    "<gram>"    :  [["g","gram","grams","gramme","grammes"], 1e-3, "mass", ["<kilogram>"]],
-    "<grain>" : [["grain","grains","gr"], 6.479891e-5, "mass", ["<kilogram>"]],
-    "<dram>"  : [["dram","drams","dr"], 0.0017718452, "mass",["<kilogram>"]],
-    "<stone>" : [["stone","stones","st"],6.35029318, "mass",["<kilogram>"]],
+    "<kilogram>" : [["kg","kilogram","kilograms"], n(1.0), "mass", ["<kilogram>"]],
+    "<AMU>" : [["u","AMU","amu"], n(1.660538921e-27), "mass", ["<kilogram>"]],
+    "<dalton>" : [["Da","Dalton","Daltons","dalton","daltons"], n(1.660538921e-27), "mass", ["<kilogram>"]],
+    "<slug>" : [["slug","slugs"], n(14.5939029), "mass", ["<kilogram>"]],
+    "<short-ton>" : [["tn","ton","short-ton"], n(907.18474), "mass", ["<kilogram>"]],
+    "<metric-ton>":[["tonne","metric-ton"], n(1000), "mass", ["<kilogram>"]],
+    "<carat>" : [["ct","carat","carats"], n(0.0002), "mass", ["<kilogram>"]],
+    "<pound>" : [["lbs","lb","pound","pounds","#"], n(0.45359237), "mass", ["<kilogram>"]],
+    "<ounce>" : [["oz","ounce","ounces"], n(0.0283495231), "mass", ["<kilogram>"]],
+    "<gram>"    :  [["g","gram","grams","gramme","grammes"], n(1e-3), "mass", ["<kilogram>"]],
+    "<grain>" : [["grain","grains","gr"], n(6.479891e-5), "mass", ["<kilogram>"]],
+    "<dram>"  : [["dram","drams","dr"], n(0.0017718452), "mass",["<kilogram>"]],
+    "<stone>" : [["stone","stones","st"],n(6.35029318), "mass",["<kilogram>"]],
 
     /* area */
-    "<hectare>":[["hectare"], 10000, "area", ["<meter>","<meter>"]],
-    "<acre>":[["acre","acres"], 4046.85642, "area", ["<meter>","<meter>"]],
-    "<sqft>":[["sqft"], 1, "area", ["<foot>","<foot>"]],
+    "<hectare>":[["hectare"], n(10000), "area", ["<meter>","<meter>"]],
+    "<acre>":[["acre","acres"], n(4046.85642), "area", ["<meter>","<meter>"]],
+    "<sqft>":[["sqft"], n(1), "area", ["<foot>","<foot>"]],
 
     /* volume */
-    "<liter>" : [["l","L","liter","liters","litre","litres"], 0.001, "volume", ["<meter>","<meter>","<meter>"]],
-    "<gallon>":  [["gal","gallon","gallons"], 0.0037854118, "volume", ["<meter>","<meter>","<meter>"]],
-    "<quart>":  [["qt","quart","quarts"], 0.00094635295, "volume", ["<meter>","<meter>","<meter>"]],
-    "<pint>":  [["pt","pint","pints"], 0.000473176475, "volume", ["<meter>","<meter>","<meter>"]],
-    "<cup>":  [["cu","cup","cups"], 0.000236588238, "volume", ["<meter>","<meter>","<meter>"]],
-    "<fluid-ounce>":  [["floz","fluid-ounce","fluid-ounces"], 2.95735297e-5, "volume", ["<meter>","<meter>","<meter>"]],
-    "<tablespoon>":  [["tb","tbsp","tbs","tablespoon","tablespoons"], 1.47867648e-5, "volume", ["<meter>","<meter>","<meter>"]],
-    "<teaspoon>":  [["tsp","teaspoon","teaspoons"], 4.92892161e-6, "volume", ["<meter>","<meter>","<meter>"]],
-    "<bushel>":  [["bu","bsh","bushel","bushels"], 0.035239072, "volume", ["<meter>","<meter>","<meter>"]],
+    "<liter>" : [["l","L","liter","liters","litre","litres"], n(0.001), "volume", ["<meter>","<meter>","<meter>"]],
+    "<gallon>":  [["gal","gallon","gallons"], n(0.0037854118), "volume", ["<meter>","<meter>","<meter>"]],
+    "<quart>":  [["qt","quart","quarts"], n(0.00094635295), "volume", ["<meter>","<meter>","<meter>"]],
+    "<pint>":  [["pt","pint","pints"], n(0.000473176475), "volume", ["<meter>","<meter>","<meter>"]],
+    "<cup>":  [["cu","cup","cups"], n(0.000236588238), "volume", ["<meter>","<meter>","<meter>"]],
+    "<fluid-ounce>":  [["floz","fluid-ounce","fluid-ounces"], n(2.95735297e-5), "volume", ["<meter>","<meter>","<meter>"]],
+    "<tablespoon>":  [["tb","tbsp","tbs","tablespoon","tablespoons"], n(1.47867648e-5), "volume", ["<meter>","<meter>","<meter>"]],
+    "<teaspoon>":  [["tsp","teaspoon","teaspoons"], n(4.92892161e-6), "volume", ["<meter>","<meter>","<meter>"]],
+    "<bushel>":  [["bu","bsh","bushel","bushels"], n(0.035239072), "volume", ["<meter>","<meter>","<meter>"]],
 
     /* speed */
-    "<kph>" : [["kph"], 0.277777778, "speed", ["<meter>"], ["<second>"]],
-    "<mph>" : [["mph"], 0.44704, "speed", ["<meter>"], ["<second>"]],
-    "<knot>" : [["kt","kn","kts","knot","knots"], 0.514444444, "speed", ["<meter>"], ["<second>"]],
-    "<fps>"  : [["fps"], 0.3048, "speed", ["<meter>"], ["<second>"]],
+    "<kph>" : [["kph"], n(0.277777778), "speed", ["<meter>"], ["<second>"]],
+    "<mph>" : [["mph"], n(0.44704), "speed", ["<meter>"], ["<second>"]],
+    "<knot>" : [["kt","kn","kts","knot","knots"], n(0.514444444), "speed", ["<meter>"], ["<second>"]],
+    "<fps>"  : [["fps"], n(0.3048), "speed", ["<meter>"], ["<second>"]],
 
     /* acceleration */
-    "<gee>" : [["gee"], 9.80665, "acceleration", ["<meter>"], ["<second>","<second>"]],
+    "<gee>" : [["gee"], n(9.80665), "acceleration", ["<meter>"], ["<second>","<second>"]],
 
     /* temperature_difference */
-    "<kelvin>" : [["degK","kelvin"], 1.0, "temperature", ["<kelvin>"]],
-    "<celsius>" : [["degC","celsius","celsius","centigrade"], 1.0, "temperature", ["<kelvin>"]],
-    "<fahrenheit>" : [["degF","fahrenheit"], 5 / 9, "temperature", ["<kelvin>"]],
-    "<rankine>" : [["degR","rankine"], 5 / 9, "temperature", ["<kelvin>"]],
-    "<temp-K>"  : [["tempK","temp-K"], 1.0, "temperature", ["<temp-K>"]],
-    "<temp-C>"  : [["tempC","temp-C"], 1.0, "temperature", ["<temp-K>"]],
-    "<temp-F>"  : [["tempF","temp-F"], 5 / 9, "temperature", ["<temp-K>"]],
-    "<temp-R>"  : [["tempR","temp-R"], 5 / 9, "temperature", ["<temp-K>"]],
+    "<kelvin>" : [["degK","kelvin"], n(1.0), "temperature", ["<kelvin>"]],
+    "<celsius>" : [["degC","celsius","celsius","centigrade"], n(1.0), "temperature", ["<kelvin>"]],
+    "<fahrenheit>" : [["degF","fahrenheit"], div(n(5), n(9)), "temperature", ["<kelvin>"]],
+    "<rankine>" : [["degR","rankine"], div(n(5), n(9)), "temperature", ["<kelvin>"]],
+    "<temp-K>"  : [["tempK","temp-K"], n(1.0), "temperature", ["<temp-K>"]],
+    "<temp-C>"  : [["tempC","temp-C"], n(1.0), "temperature", ["<temp-K>"]],
+    "<temp-F>"  : [["tempF","temp-F"], div(n(5), n(9)), "temperature", ["<temp-K>"]],
+    "<temp-R>"  : [["tempR","temp-R"], div(n(5), n(9)), "temperature", ["<temp-K>"]],
 
     /* time */
-    "<second>":  [["s","sec","secs","second","seconds"], 1.0, "time", ["<second>"]],
-    "<minute>":  [["min","mins","minute","minutes"], 60.0, "time", ["<second>"]],
-    "<hour>":  [["h","hr","hrs","hour","hours"], 3600.0, "time", ["<second>"]],
-    "<day>":  [["d","day","days"], 3600 * 24, "time", ["<second>"]],
-    "<week>":  [["wk","week","weeks"], 7 * 3600 * 24, "time", ["<second>"]],
-    "<fortnight>": [["fortnight","fortnights"], 1209600, "time", ["<second>"]],
-    "<year>":  [["y","yr","year","years","annum"], 31556926, "time", ["<second>"]],
-    "<decade>":[["decade","decades"], 315569260, "time", ["<second>"]],
-    "<century>":[["century","centuries"], 3155692600, "time", ["<second>"]],
+    "<second>":  [["s","sec","secs","second","seconds"], n(1.0), "time", ["<second>"]],
+    "<minute>":  [["min","mins","minute","minutes"], n(60.0), "time", ["<second>"]],
+    "<hour>":  [["h","hr","hrs","hour","hours"], n(3600.0), "time", ["<second>"]],
+    "<day>":  [["d","day","days"], mul(n(3600), n(24)), "time", ["<second>"]],
+    "<week>":  [["wk","week","weeks"], mul(n(7), mul(n(3600), n(24))), "time", ["<second>"]],
+    "<fortnight>": [["fortnight","fortnights"], n(1209600), "time", ["<second>"]],
+    "<year>":  [["y","yr","year","years","annum"], n(31556926), "time", ["<second>"]],
+    "<decade>":[["decade","decades"], n(315569260), "time", ["<second>"]],
+    "<century>":[["century","centuries"], n(3155692600), "time", ["<second>"]],
 
     /* pressure */
-    "<pascal>" : [["Pa","pascal","Pascal"], 1.0, "pressure", ["<kilogram>"],["<meter>","<second>","<second>"]],
-    "<bar>" : [["bar","bars"], 100000, "pressure", ["<kilogram>"],["<meter>","<second>","<second>"]],
-    "<mmHg>" : [["mmHg"], 133.322368, "pressure", ["<kilogram>"],["<meter>","<second>","<second>"]],
-    "<inHg>" : [["inHg"], 3386.3881472, "pressure", ["<kilogram>"],["<meter>","<second>","<second>"]],
-    "<torr>" : [["torr"], 133.322368, "pressure", ["<kilogram>"],["<meter>","<second>","<second>"]],
-    "<atm>" : [["atm","ATM","atmosphere","atmospheres"], 101325, "pressure", ["<kilogram>"],["<meter>","<second>","<second>"]],
-    "<psi>" : [["psi"], 6894.76, "pressure", ["<kilogram>"],["<meter>","<second>","<second>"]],
-    "<cmh2o>" : [["cmH2O","cmh2o"], 98.0638, "pressure", ["<kilogram>"],["<meter>","<second>","<second>"]],
-    "<inh2o>" : [["inH2O","inh2o"], 249.082052, "pressure", ["<kilogram>"],["<meter>","<second>","<second>"]],
+    "<pascal>" : [["Pa","pascal","Pascal"], n(1.0), "pressure", ["<kilogram>"],["<meter>","<second>","<second>"]],
+    "<bar>" : [["bar","bars"], n(100000), "pressure", ["<kilogram>"],["<meter>","<second>","<second>"]],
+    "<mmHg>" : [["mmHg"], n(133.322368), "pressure", ["<kilogram>"],["<meter>","<second>","<second>"]],
+    "<inHg>" : [["inHg"], n(3386.3881472), "pressure", ["<kilogram>"],["<meter>","<second>","<second>"]],
+    "<torr>" : [["torr"], n(133.322368), "pressure", ["<kilogram>"],["<meter>","<second>","<second>"]],
+    "<atm>" : [["atm","ATM","atmosphere","atmospheres"], n(101325), "pressure", ["<kilogram>"],["<meter>","<second>","<second>"]],
+    "<psi>" : [["psi"], n(6894.76), "pressure", ["<kilogram>"],["<meter>","<second>","<second>"]],
+    "<cmh2o>" : [["cmH2O","cmh2o"], n(98.0638), "pressure", ["<kilogram>"],["<meter>","<second>","<second>"]],
+    "<inh2o>" : [["inH2O","inh2o"], n(249.082052), "pressure", ["<kilogram>"],["<meter>","<second>","<second>"]],
 
     /* viscosity */
-    "<poise>"  : [["P","poise"], 0.1, "viscosity", ["<kilogram>"],["<meter>","<second>"] ],
-    "<stokes>" : [["St","stokes"], 1e-4, "viscosity", ["<meter>","<meter>"], ["<second>"]],
+    "<poise>"  : [["P","poise"], n(0.1), "viscosity", ["<kilogram>"],["<meter>","<second>"] ],
+    "<stokes>" : [["St","stokes"], n(1e-4), "viscosity", ["<meter>","<meter>"], ["<second>"]],
 
     /* substance */
-    "<mole>"  :  [["mol","mole"], 1.0, "substance", ["<mole>"]],
+    "<mole>"  :  [["mol","mole"], n(1.0), "substance", ["<mole>"]],
 
     /* concentration */
-    "<molar>" : [["M","molar"], 1000, "concentration", ["<mole>"], ["<meter>","<meter>","<meter>"]],
-    "<wtpercent>"  : [["wt%","wtpercent"], 10, "concentration", ["<kilogram>"], ["<meter>","<meter>","<meter>"]],
+    "<molar>" : [["M","molar"], n(1000), "concentration", ["<mole>"], ["<meter>","<meter>","<meter>"]],
+    "<wtpercent>"  : [["wt%","wtpercent"], n(10), "concentration", ["<kilogram>"], ["<meter>","<meter>","<meter>"]],
 
     /* activity */
-    "<katal>" :  [["kat","katal","Katal"], 1.0, "activity", ["<mole>"], ["<second>"]],
-    "<unit>"  :  [["U","enzUnit","unit"], 16.667e-16, "activity", ["<mole>"], ["<second>"]],
+    "<katal>" :  [["kat","katal","Katal"], n(1.0), "activity", ["<mole>"], ["<second>"]],
+    "<unit>"  :  [["U","enzUnit","unit"], n(16.667e-16), "activity", ["<mole>"], ["<second>"]],
 
     /* capacitance */
-    "<farad>" :  [["F","farad","Farad"], 1.0, "capacitance", ["<second>","<second>","<second>","<second>","<ampere>","<ampere>"], ["<meter>", "<meter>", "<kilogram>"]],
+    "<farad>" :  [["F","farad","Farad"], n(1.0), "capacitance", ["<second>","<second>","<second>","<second>","<ampere>","<ampere>"], ["<meter>", "<meter>", "<kilogram>"]],
 
     /* charge */
-    "<coulomb>" :  [["C","coulomb","Coulomb"], 1.0, "charge", ["<ampere>","<second>"]],
-    "<Ah>" :  [["Ah"], 3600, "charge", ["<ampere>","<second>"]],
+    "<coulomb>" :  [["C","coulomb","Coulomb"], n(1.0), "charge", ["<ampere>","<second>"]],
+    "<Ah>" :  [["Ah"], n(3600), "charge", ["<ampere>","<second>"]],
 
     /* current */
-    "<ampere>"  :  [["A","Ampere","ampere","amp","amps"], 1.0, "current", ["<ampere>"]],
+    "<ampere>"  :  [["A","Ampere","ampere","amp","amps"], n(1.0), "current", ["<ampere>"]],
 
     /* conductance */
-    "<siemens>" : [["S","Siemens","siemens"], 1.0, "conductance", ["<second>","<second>","<second>","<ampere>","<ampere>"], ["<kilogram>","<meter>","<meter>"]],
+    "<siemens>" : [["S","Siemens","siemens"], n(1.0), "conductance", ["<second>","<second>","<second>","<ampere>","<ampere>"], ["<kilogram>","<meter>","<meter>"]],
 
     /* inductance */
-    "<henry>" :  [["H","Henry","henry"], 1.0, "inductance", ["<meter>","<meter>","<kilogram>"], ["<second>","<second>","<ampere>","<ampere>"]],
+    "<henry>" :  [["H","Henry","henry"], n(1.0), "inductance", ["<meter>","<meter>","<kilogram>"], ["<second>","<second>","<ampere>","<ampere>"]],
 
     /* potential */
-    "<volt>"  :  [["V","Volt","volt","volts"], 1.0, "potential", ["<meter>","<meter>","<kilogram>"], ["<second>","<second>","<second>","<ampere>"]],
+    "<volt>"  :  [["V","Volt","volt","volts"], n(1.0), "potential", ["<meter>","<meter>","<kilogram>"], ["<second>","<second>","<second>","<ampere>"]],
 
     /* resistance */
     "<ohm>" :  [
       ["Ohm","ohm","\u03A9"/*Ω as greek letter*/,"\u2126"/*Ω as ohm sign*/],
-      1.0,
+      n(1.0),
       "resistance",
       ["<meter>","<meter>","<kilogram>"],["<second>","<second>","<second>","<ampere>","<ampere>"]
     ],
     /* magnetism */
-    "<weber>" : [["Wb","weber","webers"], 1.0, "magnetism", ["<meter>","<meter>","<kilogram>"], ["<second>","<second>","<ampere>"]],
-    "<tesla>"  : [["T","tesla","teslas"], 1.0, "magnetism", ["<kilogram>"], ["<second>","<second>","<ampere>"]],
-    "<gauss>" : [["G","gauss"], 1e-4, "magnetism",  ["<kilogram>"], ["<second>","<second>","<ampere>"]],
-    "<maxwell>" : [["Mx","maxwell","maxwells"], 1e-8, "magnetism", ["<meter>","<meter>","<kilogram>"], ["<second>","<second>","<ampere>"]],
-    "<oersted>"  : [["Oe","oersted","oersteds"], 250.0 / Math.PI, "magnetism", ["<ampere>"], ["<meter>"]],
+    "<weber>" : [["Wb","weber","webers"], n(1.0), "magnetism", ["<meter>","<meter>","<kilogram>"], ["<second>","<second>","<ampere>"]],
+    "<tesla>"  : [["T","tesla","teslas"], n(1.0), "magnetism", ["<kilogram>"], ["<second>","<second>","<ampere>"]],
+    "<gauss>" : [["G","gauss"], n(1e-4), "magnetism",  ["<kilogram>"], ["<second>","<second>","<ampere>"]],
+    "<maxwell>" : [["Mx","maxwell","maxwells"], n(1e-8), "magnetism", ["<meter>","<meter>","<kilogram>"], ["<second>","<second>","<ampere>"]],
+    "<oersted>"  : [["Oe","oersted","oersteds"], div(n(250.0), PI), "magnetism", ["<ampere>"], ["<meter>"]],
 
     /* energy */
-    "<joule>" :  [["J","joule","Joule","joules"], 1.0, "energy", ["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
-    "<erg>"   :  [["erg","ergs"], 1e-7, "energy", ["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
-    "<btu>"   :  [["BTU","btu","BTUs"], 1055.056, "energy", ["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
-    "<calorie>" :  [["cal","calorie","calories"], 4.18400, "energy",["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
-    "<Calorie>" :  [["Cal","Calorie","Calories"], 4184.00, "energy",["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
-    "<therm-US>" : [["th","therm","therms","Therm","therm-US"], 105480400, "energy",["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
-    "<Wh>" : [["Wh"], 3600, "energy",["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
+    "<joule>" :  [["J","joule","Joule","joules"], n(1.0), "energy", ["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
+    "<erg>"   :  [["erg","ergs"], n(1e-7), "energy", ["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
+    "<btu>"   :  [["BTU","btu","BTUs"], n(1055.056), "energy", ["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
+    "<calorie>" :  [["cal","calorie","calories"], n(4.18400), "energy",["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
+    "<Calorie>" :  [["Cal","Calorie","Calories"], n(4184.00), "energy",["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
+    "<therm-US>" : [["th","therm","therms","Therm","therm-US"], n(105480400), "energy",["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
+    "<Wh>" : [["Wh"], n(3600), "energy",["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
 
     /* force */
-    "<newton>"  : [["N","Newton","newton"], 1.0, "force", ["<kilogram>","<meter>"], ["<second>","<second>"]],
-    "<dyne>"  : [["dyn","dyne"], 1e-5, "force", ["<kilogram>","<meter>"], ["<second>","<second>"]],
-    "<pound-force>"  : [["lbf","pound-force"], 4.448222, "force", ["<kilogram>","<meter>"], ["<second>","<second>"]],
+    "<newton>"  : [["N","Newton","newton"], n(1.0), "force", ["<kilogram>","<meter>"], ["<second>","<second>"]],
+    "<dyne>"  : [["dyn","dyne"], n(1e-5), "force", ["<kilogram>","<meter>"], ["<second>","<second>"]],
+    "<pound-force>"  : [["lbf","pound-force"], n(4.448222), "force", ["<kilogram>","<meter>"], ["<second>","<second>"]],
 
     /* frequency */
-    "<hertz>" : [["Hz","hertz","Hertz"], 1.0, "frequency", ["<1>"], ["<second>"]],
+    "<hertz>" : [["Hz","hertz","Hertz"], n(1.0), "frequency", ["<1>"], ["<second>"]],
 
     /* angle */
-    "<radian>" :[["rad","radian","radians"], 1.0, "angle", ["<radian>"]],
-    "<degree>" :[["deg","degree","degrees"], Math.PI / 180.0, "angle", ["<radian>"]],
-    "<gradian>"   :[["gon","grad","gradian","grads"], Math.PI / 200.0, "angle", ["<radian>"]],
-    "<steradian>"  : [["sr","steradian","steradians"], 1.0, "solid_angle", ["<steradian>"]],
+    "<radian>" :[["rad","radian","radians"], n(1.0), "angle", ["<radian>"]],
+    "<degree>" :[["deg","degree","degrees"], div(PI, n(180.0)), "angle", ["<radian>"]],
+    "<gradian>"   :[["gon","grad","gradian","grads"], div(PI, n(200.0)), "angle", ["<radian>"]],
+    "<steradian>"  : [["sr","steradian","steradians"], n(1.0), "solid_angle", ["<steradian>"]],
 
     /* rotation */
-    "<rotation>" : [["rotation"], 2.0 * Math.PI, "angle", ["<radian>"]],
-    "<rpm>"   :[["rpm"], 2.0 * Math.PI / 60.0, "angular_velocity", ["<radian>"], ["<second>"]],
+    "<rotation>" : [["rotation"], mul(n(2.0), PI), "angle", ["<radian>"]],
+    "<rpm>"   :[["rpm"], div(mul(n(2.0), PI), n(60.0)), "angular_velocity", ["<radian>"], ["<second>"]],
 
     /* information */
-    "<byte>"  :[["B","byte","bytes"], 1.0, "information", ["<byte>"]],
-    "<bit>"  :[["b","bit","bits"], 0.125, "information", ["<byte>"]],
+    "<byte>"  :[["B","byte","bytes"], n(1.0), "information", ["<byte>"]],
+    "<bit>"  :[["b","bit","bits"], n(0.125), "information", ["<byte>"]],
 
     /* information rate */
-    "<Bps>" : [["Bps"], 1.0, "information_rate", ["<byte>"], ["<second>"]],
-    "<bps>" : [["bps"], 0.125, "information_rate", ["<byte>"], ["<second>"]],
+    "<Bps>" : [["Bps"], n(1.0), "information_rate", ["<byte>"], ["<second>"]],
+    "<bps>" : [["bps"], n(0.125), "information_rate", ["<byte>"], ["<second>"]],
 
     /* currency */
-    "<dollar>":[["USD","dollar"], 1.0, "currency", ["<dollar>"]],
-    "<cents>" :[["cents"], 0.01, "currency", ["<dollar>"]],
+    "<dollar>":[["USD","dollar"], n(1.0), "currency", ["<dollar>"]],
+    "<cents>" :[["cents"], n(0.01), "currency", ["<dollar>"]],
 
     /* luminosity */
-    "<candela>" : [["cd","candela"], 1.0, "luminosity", ["<candela>"]],
-    "<lumen>" : [["lm","lumen"], 1.0, "luminous_power", ["<candela>","<steradian>"]],
-    "<lux>" :[["lux"], 1.0, "illuminance", ["<candela>","<steradian>"], ["<meter>","<meter>"]],
+    "<candela>" : [["cd","candela"], n(1.0), "luminosity", ["<candela>"]],
+    "<lumen>" : [["lm","lumen"], n(1.0), "luminous_power", ["<candela>","<steradian>"]],
+    "<lux>" :[["lux"], n(1.0), "illuminance", ["<candela>","<steradian>"], ["<meter>","<meter>"]],
 
     /* power */
-    "<watt>"  : [["W","watt","watts"], 1.0, "power", ["<kilogram>","<meter>","<meter>"], ["<second>","<second>","<second>"]],
-    "<volt-ampere>"  : [["VA","volt-ampere"], 1.0, "power", ["<kilogram>","<meter>","<meter>"], ["<second>","<second>","<second>"]],
-    "<volt-ampere-reactive>"  : [["var","Var","VAr","VAR","volt-ampere-reactive"], 1.0, "power", ["<kilogram>","<meter>","<meter>"], ["<second>","<second>","<second>"]],
-    "<horsepower>"  :  [["hp","horsepower"], 745.699872, "power", ["<kilogram>","<meter>","<meter>"], ["<second>","<second>","<second>"]],
+    "<watt>"  : [["W","watt","watts"], n(1.0), "power", ["<kilogram>","<meter>","<meter>"], ["<second>","<second>","<second>"]],
+    "<volt-ampere>"  : [["VA","volt-ampere"], n(1.0), "power", ["<kilogram>","<meter>","<meter>"], ["<second>","<second>","<second>"]],
+    "<volt-ampere-reactive>"  : [["var","Var","VAr","VAR","volt-ampere-reactive"], n(1.0), "power", ["<kilogram>","<meter>","<meter>"], ["<second>","<second>","<second>"]],
+    "<horsepower>"  :  [["hp","horsepower"], n(745.699872), "power", ["<kilogram>","<meter>","<meter>"], ["<second>","<second>","<second>"]],
 
     /* radiation */
-    "<gray>" : [["Gy","gray","grays"], 1.0, "radiation", ["<meter>","<meter>"], ["<second>","<second>"]],
-    "<roentgen>" : [["R","roentgen"], 0.009330, "radiation", ["<meter>","<meter>"], ["<second>","<second>"]],
-    "<sievert>" : [["Sv","sievert","sieverts"], 1.0, "radiation", ["<meter>","<meter>"], ["<second>","<second>"]],
-    "<becquerel>" : [["Bq","becquerel","becquerels"], 1.0, "radiation", ["<1>"],["<second>"]],
-    "<curie>" : [["Ci","curie","curies"], 3.7e10, "radiation", ["<1>"],["<second>"]],
+    "<gray>" : [["Gy","gray","grays"], n(1.0), "radiation", ["<meter>","<meter>"], ["<second>","<second>"]],
+    "<roentgen>" : [["R","roentgen"], n(0.009330), "radiation", ["<meter>","<meter>"], ["<second>","<second>"]],
+    "<sievert>" : [["Sv","sievert","sieverts"], n(1.0), "radiation", ["<meter>","<meter>"], ["<second>","<second>"]],
+    "<becquerel>" : [["Bq","becquerel","becquerels"], n(1.0), "radiation", ["<1>"],["<second>"]],
+    "<curie>" : [["Ci","curie","curies"], n(3.7e10), "radiation", ["<1>"],["<second>"]],
 
     /* rate */
-    "<cpm>" : [["cpm"], 1.0 / 60.0, "rate", ["<count>"],["<second>"]],
-    "<dpm>" : [["dpm"], 1.0 / 60.0, "rate", ["<count>"],["<second>"]],
-    "<bpm>" : [["bpm"], 1.0 / 60.0, "rate", ["<count>"],["<second>"]],
+    "<cpm>" : [["cpm"], div(n(1.0), n(60.0)), "rate", ["<count>"],["<second>"]],
+    "<dpm>" : [["dpm"], div(n(1.0), n(60.0)), "rate", ["<count>"],["<second>"]],
+    "<bpm>" : [["bpm"], div(n(1.0), n(60.0)), "rate", ["<count>"],["<second>"]],
 
     /* resolution / typography */
-    "<dot>" : [["dot","dots"], 1, "resolution", ["<each>"]],
-    "<pixel>" : [["pixel","px"], 1, "resolution", ["<each>"]],
-    "<ppi>" : [["ppi"], 1, "resolution", ["<pixel>"], ["<inch>"]],
-    "<dpi>" : [["dpi"], 1, "typography", ["<dot>"], ["<inch>"]],
+    "<dot>" : [["dot","dots"], n(1), "resolution", ["<each>"]],
+    "<pixel>" : [["pixel","px"], n(1), "resolution", ["<each>"]],
+    "<ppi>" : [["ppi"], n(1), "resolution", ["<pixel>"], ["<inch>"]],
+    "<dpi>" : [["dpi"], n(1), "typography", ["<dot>"], ["<inch>"]],
 
     /* other */
-    "<cell>" : [["cells","cell"], 1, "counting", ["<each>"]],
-    "<each>" : [["each"], 1.0, "counting", ["<each>"]],
-    "<count>" : [["count"], 1.0, "counting", ["<each>"]],
-    "<base-pair>"  : [["bp","base-pair"], 1.0, "counting", ["<each>"]],
-    "<nucleotide>" : [["nt","nucleotide"], 1.0, "counting", ["<each>"]],
-    "<molecule>" : [["molecule","molecules"], 1.0, "counting", ["<1>"]],
-    "<dozen>" :  [["doz","dz","dozen"],12.0,"prefix_only", ["<each>"]],
-    "<percent>": [["%","percent"], 0.01, "prefix_only", ["<1>"]],
-    "<ppm>" :  [["ppm"],1e-6, "prefix_only", ["<1>"]],
-    "<ppt>" :  [["ppt"],1e-9, "prefix_only", ["<1>"]],
-    "<gross>" :  [["gr","gross"],144.0, "prefix_only", ["<dozen>","<dozen>"]],
-    "<decibel>"  : [["dB","decibel","decibels"], 1.0, "logarithmic", ["<decibel>"]]
+    "<cell>" : [["cells","cell"], n(1), "counting", ["<each>"]],
+    "<each>" : [["each"], n(1.0), "counting", ["<each>"]],
+    "<count>" : [["count"], n(1.0), "counting", ["<each>"]],
+    "<base-pair>"  : [["bp","base-pair"], n(1.0), "counting", ["<each>"]],
+    "<nucleotide>" : [["nt","nucleotide"], n(1.0), "counting", ["<each>"]],
+    "<molecule>" : [["molecule","molecules"], n(1.0), "counting", ["<1>"]],
+    "<dozen>" :  [["doz","dz","dozen"],n(12.0),"prefix_only", ["<each>"]],
+    "<percent>": [["%","percent"], n(0.01), "prefix_only", ["<1>"]],
+    "<ppm>" :  [["ppm"],n(1e-6), "prefix_only", ["<1>"]],
+    "<ppt>" :  [["ppt"],n(1e-9), "prefix_only", ["<1>"]],
+    "<gross>" :  [["gr","gross"],n(144.0), "prefix_only", ["<dozen>","<dozen>"]],
+    "<decibel>"  : [["dB","decibel","decibels"], n(1.0), "logarithmic", ["<decibel>"]]
   };
 
   var BASE_UNITS = ["<meter>","<kilogram>","<second>","<mole>", "<ampere>","<radian>","<kelvin>","<temp-K>","<byte>","<dollar>","<candela>","<each>","<steradian>","<decibel>"];
@@ -824,7 +1065,7 @@ SOFTWARE.
     var scalar = definition[1];
     var numerator = definition[3] || [];
     var denominator = definition[4] || [];
-    if (!isNumber(scalar)) {
+    if (!Field.isMember(scalar)) {
       throw new QtyError(unitDef + ": Invalid unit definition. " +
                          "'scalar' must be a number");
     }
@@ -1033,10 +1274,10 @@ SOFTWARE.
     if (scalarMatch) {
       // Allow whitespaces between sign and scalar for loose parsing
       scalarMatch = scalarMatch.replace(/\s/g, "");
-      this.scalar = parseFloat(scalarMatch);
+      this.scalar = Field.fromString(scalarMatch);
     }
     else {
-      this.scalar = 1;
+      this.scalar = Field.one();
     }
     var top = result[2];
     var bottom = result[3];
@@ -1202,13 +1443,13 @@ SOFTWARE.
     this.denominator = UNITY_ARRAY;
 
     if (isDefinitionObject(initValue)) {
-      this.scalar = initValue.scalar;
+      this.scalar = Field.isMember(initValue.scalar) ? initValue.scalar : Field.fromNumber(initValue.scalar);
       this.numerator = (initValue.numerator && initValue.numerator.length !== 0) ? initValue.numerator : UNITY_ARRAY;
       this.denominator = (initValue.denominator && initValue.denominator.length !== 0) ? initValue.denominator : UNITY_ARRAY;
     }
     else if (initUnits) {
       parse.call(this, initUnits);
-      this.scalar = initValue;
+      this.scalar = Field.isMember(initValue) ? initValue : Field.fromNumber(initValue);
     }
     else {
       parse.call(this, initValue);
@@ -1230,7 +1471,7 @@ SOFTWARE.
     this.initValue = initValue;
     updateBaseScalar.call(this);
 
-    if (this.isTemperature() && this.baseScalar < 0) {
+    if (this.isTemperature() && Field.lt(this.baseScalar, Field.zero())) {
       throw new QtyError("Temperatures must not be less than absolute zero");
     }
   }
@@ -1238,6 +1479,8 @@ SOFTWARE.
   Qty.prototype = {
     // Properly set up constructor
     constructor: Qty,
+    field: Field,
+    fields: fields
   };
 
   /**
@@ -1250,13 +1493,14 @@ SOFTWARE.
    */
   function assertValidConstructorArgs(value, units) {
     if (units) {
-      if (!(isNumber(value) && isString(units))) {
+      if (!((Field.isMember(value) || isNumber(value)) && isString(units))) {
         throw new QtyError("Only number accepted as initialization value " +
                            "when units are explicitly provided");
       }
     }
     else {
       if (!(isString(value) ||
+            Field.isMember(value) ||
             isNumber(value) ||
             isQty(value)    ||
             isDefinitionObject(value))) {
@@ -1378,17 +1622,17 @@ SOFTWARE.
     var lhsUnits = lhs.units();
     var rhsConverted = rhs.to(lhsUnits);
     var dstDegrees = Qty(getDegreeUnits(lhsUnits));
-    return Qty({"scalar": lhs.scalar - rhsConverted.scalar, "numerator": dstDegrees.numerator, "denominator": dstDegrees.denominator});
+    return Qty({"scalar": Field.sub(lhs.scalar, rhsConverted.scalar), "numerator": dstDegrees.numerator, "denominator": dstDegrees.denominator});
   }
 
   function subtractTempDegrees(temp,deg) {
     var tempDegrees = deg.to(getDegreeUnits(temp.units()));
-    return Qty({"scalar": temp.scalar - tempDegrees.scalar, "numerator": temp.numerator, "denominator": temp.denominator});
+    return Qty({"scalar": Field.sub(temp.scalar, tempDegrees.scalar), "numerator": temp.numerator, "denominator": temp.denominator});
   }
 
   function addTempDegrees(temp,deg) {
     var tempDegrees = deg.to(getDegreeUnits(temp.units()));
-    return Qty({"scalar": temp.scalar + tempDegrees.scalar, "numerator": temp.numerator, "denominator": temp.denominator});
+    return Qty({"scalar": Field.add(temp.scalar, tempDegrees.scalar), "numerator": temp.numerator, "denominator": temp.denominator});
   }
 
   function getDegreeUnits(units) {
@@ -1409,6 +1653,8 @@ SOFTWARE.
     }
   }
 
+  var five = Field.fromNumber(5);
+  var nine = Field.fromNumber(9);
   function toDegrees(src,dst) {
     var srcDegK = toDegK(src);
     var dstUnits = dst.units();
@@ -1421,10 +1667,10 @@ SOFTWARE.
       dstScalar = srcDegK.scalar ;
     }
     else if (dstUnits === "degF") {
-      dstScalar = srcDegK.scalar * 9 / 5;
+      dstScalar = Field.div(Field.mul(srcDegK.scalar, nine), five);
     }
     else if (dstUnits === "degR") {
-      dstScalar = srcDegK.scalar * 9 / 5;
+      dstScalar = Field.dive(Field.mul(srcDegK.scalar, nine), five);
     }
     else {
       throw new QtyError("Unknown type for degree conversion to: " + dstUnits);
@@ -1446,10 +1692,10 @@ SOFTWARE.
       q = qty.scalar;
     }
     else if (units === "tempF") {
-      q = qty.scalar * 5 / 9;
+      q = Field.div(Field.mul(qty.scalar, five),nine);
     }
     else if (units === "tempR") {
-      q = qty.scalar * 5 / 9;
+      q = Field.div(Field.mul(qty.scalar, five),nine);
     }
     else {
       throw new QtyError("Unknown type for temp conversion from: " + units);
@@ -1466,13 +1712,13 @@ SOFTWARE.
       dstScalar = src.baseScalar;
     }
     else if (dstUnits === "tempC") {
-      dstScalar = src.baseScalar - 273.15;
+      dstScalar = Field.sub(src.baseScalar, Field.fromNumber(273.15));
     }
     else if (dstUnits === "tempF") {
-      dstScalar = (src.baseScalar * 9 / 5) - 459.67;
+      dstScalar = Field.sub(Field.div(Field.mul(src.baseScalar, nine), five), Field.fromNumber(459.67));
     }
     else if (dstUnits === "tempR") {
-      dstScalar = src.baseScalar * 9 / 5;
+      dstScalar = Field.div(Field.mul(src.baseScalar, nine), five);
     }
     else {
       throw new QtyError("Unknown type for temp conversion to: " + dstUnits);
@@ -1491,13 +1737,13 @@ SOFTWARE.
       q = qty.scalar;
     }
     else if (units === "tempC") {
-      q = qty.scalar + 273.15;
+      q = Field.add(qty.scalar, Field.fromNumber(273.15));
     }
     else if (units === "tempF") {
-      q = (qty.scalar + 459.67) * 5 / 9;
+      q = Field.div(Field.mul(Field.add(qty.scalar, Field.fromNumber(459.67)), five), nine);
     }
     else if (units === "tempR") {
-      q = qty.scalar * 5 / 9;
+      q = Field.div(Field.mul(qty.scalar, five), nine);
     }
     else {
       throw new QtyError("Unknown type for temp conversion from: " + units);
@@ -1561,7 +1807,7 @@ SOFTWARE.
           target = toDegrees(this,target);
         }
         else {
-          var q = divSafe(this.baseScalar, target.baseScalar);
+          var q = Field.divSafe(this.baseScalar, target.baseScalar);
           target = Qty({"scalar": q, "numerator": target.numerator, "denominator": target.denominator});
         }
       }
@@ -1592,7 +1838,7 @@ SOFTWARE.
     // Converts the unit back to a float if it is unitless.  Otherwise raises an exception
     toFloat: function() {
       if (this.isUnitless()) {
-        return this.scalar;
+        return Field.toNumber(this.scalar);
       }
       throw new QtyError("Can't convert to Float unless unitless.  Use Unit#scalar");
     },
@@ -1628,14 +1874,14 @@ SOFTWARE.
         throwIncompatibleUnits(this.units(), precQuantity.units());
       }
 
-      if (precQuantity.scalar === 0) {
+      if (Field.isExactlyZero(precQuantity.scalar)) {
         throw new QtyError("Divide by zero");
       }
 
-      var precRoundedResult = mulSafe(Math.round(this.scalar / precQuantity.scalar),
+      var precRoundedResult = Field.mulSafe(Field.round(Field.div(this.scalar, precQuantity.scalar)),
                                          precQuantity.scalar);
 
-      return Qty(precRoundedResult + this.units());
+      return Qty(precRoundedResult, this.units());
     }
   });
 
@@ -1672,7 +1918,7 @@ SOFTWARE.
     var convert;
     if (!srcQty.isTemperature()) {
       convert = function(value) {
-        return value * srcQty.baseScalar / dstQty.baseScalar;
+        return Field.mul(value, Field.div(srcQty.baseScalar, dstQty.baseScalar));
       };
     }
     else {
@@ -1705,18 +1951,18 @@ SOFTWARE.
   function toBaseUnits (numerator,denominator) {
     var num = [];
     var den = [];
-    var q = 1;
+    var q = Field.one();
     var unit;
     for (var i = 0; i < numerator.length; i++) {
       unit = numerator[i];
       if (PREFIX_VALUES[unit]) {
         // workaround to fix
         // 0.1 * 0.1 => 0.010000000000000002
-        q = mulSafe(q, PREFIX_VALUES[unit]);
+        q = Field.mulSafe(q, PREFIX_VALUES[unit]);
       }
       else {
         if (UNIT_VALUES[unit]) {
-          q *= UNIT_VALUES[unit].scalar;
+          q = Field.mul(q, UNIT_VALUES[unit].scalar);
 
           if (UNIT_VALUES[unit].numerator) {
             num.push(UNIT_VALUES[unit].numerator);
@@ -1730,11 +1976,11 @@ SOFTWARE.
     for (var j = 0; j < denominator.length; j++) {
       unit = denominator[j];
       if (PREFIX_VALUES[unit]) {
-        q /= PREFIX_VALUES[unit];
+        q = Field.div(q, PREFIX_VALUES[unit]);
       }
       else {
         if (UNIT_VALUES[unit]) {
-          q /= UNIT_VALUES[unit].scalar;
+          q = Field.div(q, UNIT_VALUES[unit].scalar);
 
           if (UNIT_VALUES[unit].numerator) {
             den.push(UNIT_VALUES[unit].numerator);
@@ -1792,7 +2038,7 @@ SOFTWARE.
         return addTempDegrees(other, this);
       }
 
-      return Qty({"scalar": this.scalar + other.to(this).scalar, "numerator": this.numerator, "denominator": this.denominator});
+      return Qty({"scalar": Field.add(this.scalar, other.to(this).scalar), "numerator": this.numerator, "denominator": this.denominator});
     },
 
     sub: function(other) {
@@ -1814,12 +2060,15 @@ SOFTWARE.
         throw new QtyError("Cannot subtract a temperature from a differential degree unit");
       }
 
-      return Qty({"scalar": this.scalar - other.to(this).scalar, "numerator": this.numerator, "denominator": this.denominator});
+      return Qty({"scalar": Field.sub(this.scalar, other.to(this).scalar), "numerator": this.numerator, "denominator": this.denominator});
     },
 
     mul: function(other) {
-      if (isNumber(other)) {
-        return Qty({"scalar": mulSafe(this.scalar, other), "numerator": this.numerator, "denominator": this.denominator});
+      if (Field.isMember(other)) {
+        return Qty({"scalar": Field.mulSafe(this.scalar, other), "numerator": this.numerator, "denominator": this.denominator});
+      }
+      else if (isNumber(other)) {
+        return Qty({"scalar": Field.mulSafe(this.scalar, Field.fromNumber(other)), "numerator": this.numerator, "denominator": this.denominator});
       }
       else if (isString(other)) {
         other = Qty(other);
@@ -1840,21 +2089,27 @@ SOFTWARE.
       }
       var numdenscale = cleanTerms(op1.numerator, op1.denominator, op2.numerator, op2.denominator);
 
-      return Qty({"scalar": mulSafe(op1.scalar, op2.scalar, numdenscale[2]), "numerator": numdenscale[0], "denominator": numdenscale[1]});
+      return Qty({"scalar": Field.mulSafe(op1.scalar, op2.scalar, numdenscale[2]), "numerator": numdenscale[0], "denominator": numdenscale[1]});
     },
 
     div: function(other) {
-      if (isNumber(other)) {
+      if (Field.isMember(other)) {
+        if (Field.isExactlyZero(other)) {
+          throw new QtyError("Divide by zero");
+        }
+        return Qty({"scalar": Field.div(this.scalar, other), "numerator": this.numerator, "denominator": this.denominator});
+      }
+      else if (isNumber(other)) {
         if (other === 0) {
           throw new QtyError("Divide by zero");
         }
-        return Qty({"scalar": this.scalar / other, "numerator": this.numerator, "denominator": this.denominator});
+        return Qty({"scalar": Field.div(this.scalar, Field.fromNumber(other)), "numerator": this.numerator, "denominator": this.denominator});
       }
       else if (isString(other)) {
         other = Qty(other);
       }
 
-      if (other.scalar === 0) {
+      if (Field.isExactlyZero(other.scalar)) {
         throw new QtyError("Divide by zero");
       }
 
@@ -1876,7 +2131,7 @@ SOFTWARE.
       }
       var numdenscale = cleanTerms(op1.numerator, op1.denominator, op2.denominator, op2.numerator);
 
-      return Qty({"scalar": mulSafe(op1.scalar, numdenscale[2]) / op2.scalar, "numerator": numdenscale[0], "denominator": numdenscale[1]});
+      return Qty({"scalar": Field.div(Field.mulSafe(op1.scalar, numdenscale[2]), op2.scalar), "numerator": numdenscale[0], "denominator": numdenscale[1]});
     },
 
     // Returns a Qty that is the inverse of this Qty,
@@ -1884,10 +2139,10 @@ SOFTWARE.
       if (this.isTemperature()) {
         throw new QtyError("Cannot divide with temperatures");
       }
-      if (this.scalar === 0) {
+      if (Field.isExactlyZero(this.scalar)) {
         throw new QtyError("Divide by zero");
       }
-      return Qty({"scalar": 1 / this.scalar, "numerator": this.denominator, "denominator": this.numerator});
+      return Qty({"scalar": Field.inverse(this.scalar), "numerator": this.denominator, "denominator": this.numerator});
     }
   });
 
@@ -1905,6 +2160,7 @@ SOFTWARE.
 
     function combineTerms(terms, direction) {
       var k;
+      var j;
       var prefix;
       var prefixValue;
       for (var i = 0; i < terms.length; i++) {
@@ -1917,16 +2173,17 @@ SOFTWARE.
         else {
           k = terms[i];
           prefix = null;
-          prefixValue = 1;
+          prefixValue = Field.one();
         }
         if (k && k !== UNITY) {
           if (combined[k]) {
             combined[k][0] += direction;
-            var combinedPrefixValue = combined[k][2] ? PREFIX_VALUES[combined[k][2]] : 1;
-            combined[k][direction === 1 ? 3 : 4] *= divSafe(prefixValue, combinedPrefixValue);
+            var combinedPrefixValue = combined[k][2] ? PREFIX_VALUES[combined[k][2]] : Field.one();
+            j = direction === 1 ? 3 : 4;
+            combined[k][j] = Field.mul(combined[k][j], Field.divSafe(prefixValue, combinedPrefixValue));
           }
           else {
-            combined[k] = [direction, k, prefix, 1, 1];
+            combined[k] = [direction, k, prefix, Field.one(), Field.one()];
           }
         }
       }
@@ -1939,7 +2196,7 @@ SOFTWARE.
 
     var num = [];
     var den = [];
-    var scale = 1;
+    var scale = Field.one();
 
     for (var prop in combined) {
       if (combined.hasOwnProperty(prop)) {
@@ -1955,7 +2212,7 @@ SOFTWARE.
             den.push(item[2] === null ? item[1] : [item[2], item[1]]);
           }
         }
-        scale *= divSafe(item[3], item[4]);
+        scale = Field.mul(scale, Field.divSafe(item[3], item[4]));
       }
     }
 
@@ -2017,13 +2274,13 @@ SOFTWARE.
       if (!this.isCompatible(other)) {
         throwIncompatibleUnits(this.units(), other.units());
       }
-      if (this.baseScalar < other.baseScalar) {
+      if (Field.lt(this.baseScalar, other.baseScalar)) {
         return -1;
       }
-      else if (this.baseScalar === other.baseScalar) {
+      else if (Field.eq(this.baseScalar, other.baseScalar)) {
         return 0;
       }
-      else if (this.baseScalar > other.baseScalar) {
+      else if (Field.gt(this.baseScalar, other.baseScalar)) {
         return 1;
       }
     },
@@ -2032,7 +2289,7 @@ SOFTWARE.
     // Unit("100 cm").same(Unit("100 cm"))  # => true
     // Unit("100 cm").same(Unit("1 m"))     # => false
     same: function(other) {
-      return (this.scalar === other.scalar) && (this.units() === other.units());
+      return (Field.eq(this.scalar, other.scalar)) && (this.units() === other.units());
     }
   });
 
@@ -2234,7 +2491,7 @@ SOFTWARE.
 
       var out = this.to(targetUnits);
 
-      var outScalar = maxDecimals !== undefined ? round(out.scalar, maxDecimals) : out.scalar;
+      var outScalar = maxDecimals !== undefined ? Field.roundTo(out.scalar, maxDecimals) : out.scalar;
       out = (outScalar + " " + out.units()).trim();
       return out;
     },
