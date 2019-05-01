@@ -125,7 +125,7 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
 
     jme.funcSynonyms['qty'] = 'quantity';
     addFunction('quantity',[TString],TQuantity,function(q) { return unit_quantity(q); });
-    addFunction('quantity',[TDecimal,TString],TQuantity,function(n,q) { return unit_quantity(q).mul(n); });
+    addFunction('quantity',[TDecimal,TString],TQuantity,function(n,q) { return unit_quantity(q).mul(n.re); });
     addFunction('units_of_kind',[TString],TList,function(kind) { 
         if(kind=='unitless') {
             return [''];
@@ -178,11 +178,11 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
     addFunction('+u',[TQuantity],TQuantity,function(q){ return q; });
     addFunction('-u',[TQuantity],TQuantity,function(q){ return Qty({scalar:-q.scalar, numerator:q.numerator, denominator: q.denominator}); });
     addFunction('*',[TQuantity,TQuantity],TQuantity,function(a,b) { return a.mul(b); });
-    addFunction('*',[TDecimal,TQuantity],TQuantity,function(n,u) { return u.mul(n); });
-    addFunction('*',[TQuantity,TDecimal],TQuantity,function(u,n) { return u.mul(n); });
+    addFunction('*',[TDecimal,TQuantity],TQuantity,function(n,u) { return u.mul(n.re); });
+    addFunction('*',[TQuantity,TDecimal],TQuantity,function(u,n) { return u.mul(n.re); });
     addFunction('/',[TQuantity,TQuantity],TQuantity,function(a,b) { return a.div(b); });
-    addFunction('/',[TQuantity,TDecimal],TQuantity,function(u,n) { return u.div(n); });
-    addFunction('/',[TDecimal,TQuantity],TQuantity,function(n,u) { return u.inverse().mul(n); });
+    addFunction('/',[TQuantity,TDecimal],TQuantity,function(u,n) { return u.div(n.re); });
+    addFunction('/',[TDecimal,TQuantity],TQuantity,function(n,u) { return u.inverse().mul(n.re); });
     addFunction('round',[TQuantity,TString],TQuantity,function(q,precision) { return q.toPrec(precision); });
     addFunction('round',[TQuantity,TQuantity],TQuantity,function(q,precision) { return q.toPrec(precision.toString()); });
     addFunction('round',[TQuantity],TQuantity,function(q){ return q.toPrec(1); });
