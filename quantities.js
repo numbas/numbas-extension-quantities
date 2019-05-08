@@ -6,10 +6,20 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
         return (n+'').replace(/\d/g,function(d){ d=parseInt(d); return superscripts[d]; });
     }
 
-    var TQuantity = jme.types.TQuantity = jme.types.quantity = function(quantity) {
+    var TQuantity = function(quantity) {
         this.value = quantity;
     };
-    TQuantity.prototype.type = 'quantity';
+    jme.registerType(TQuantity,'quantity');
+    jme.display.texOps['quantity'] = function(thing,texArgs,settings) {
+        if(thing.args[1].tok.type=='string') {
+            var units = Qty(thing.args[1].tok.value).format(function(s,units) { return tex_units(units) });
+            return texArgs[0] + ' \\, ' + units;
+        } else {
+            return '\\operatorname{quantity} \\left ( '+texArgs.join(' , ')+' \\right )';
+        }
+    };
+
+
 
     var unit_names = {
         'tempC': '°C',
@@ -58,28 +68,9 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
         return units;
     }
 
-    jme.display.typeToTeX.quantity = function(thing,tok,texArgs,settings) {
-        return tok.value.format(function(scalar,units) {
-            return settings.texNumber(scalar,settings)+' \\, '+tex_units(units);
-        });
-    };
-    jme.display.texOps['quantity'] = function(thing,texArgs,settings) {
-        if(thing.args[1].tok.type=='string') {
-            var units = Qty(thing.args[1].tok.value).format(function(s,units) { return tex_units(units) });
-            return texArgs[0] + ' \\, ' + units;
-        } else {
-            return '\\operatorname{quantity} \\left ( '+texArgs.join(' , ')+' \\right )';
-        }
-    };
-    jme.display.typeToJME.quantity = function(tree,tok,bits,settings) {
-        var scalar = tok.value.format(function(scalar){return Numbas.math.niceNumber(scalar)});
-        var units = tok.value.format(function(scalar,units) { return units.replace(/(\D+?)(\d+)/g,'$1^$2'); });
-        return 'quantity('+scalar+', "'+jme.escape(units)+'")';
-    }
-
     function quantity_string(q,style) {
         return q.format(function(scalar,units) {
-            var scalar_display = Numbas.math.niceNumber(scalar,{style:style});
+            var scalar_display = Numbas.math.niceDecimal(scalar.toDecimal(),{style:style});
             var units_display = fix_units(units);
             return scalar_display+(units_display ? ' '+units_display : '');
         }); 
@@ -87,13 +78,25 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
 
     function plain_quantity_string(q,style) {
         return q.format(function(scalar,units) {
-            return Numbas.math.niceNumber(scalar,{style:style})+' '+plain_units(units);
+            return Numbas.math.niceDecimal(scalar.toDecimal(),{style:style})+' '+plain_units(units);
         }); 
     }
 
-    jme.typeToDisplayString.quantity = function(tok) {
-        return quantity_string(tok.value);
-    }
+    jme.display.registerType(TQuantity,{
+        tex: function(thing,tok,texArgs,settings) {
+            return tok.value.format(function(scalar,units) {
+                return settings.texNumber(scalar,settings)+' \\, '+tex_units(units);
+            });
+        },
+        jme: function(tree,tok,bits,settings) {
+            var scalar = tok.value.format(function(scalar){return scalar.toString();});
+            var units = tok.value.format(function(scalar,units) { return units.replace(/(\D+?)(\d+)/g,'$1^$2'); });
+            return 'quantity('+scalar+', "'+jme.escape(units)+'")';
+        },
+        displayString: function(tok) {
+            return quantity_string(tok.value);
+        }
+    });
 
     Numbas.util.equalityTests['quantity'] = function(a,b) {
         return a.value.isCompatible(b.value) && a.value.eq(b.value);
