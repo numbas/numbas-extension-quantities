@@ -2128,8 +2128,6 @@ SOFTWARE.
       });
     },
     mul: function mul(other) {
-      console.log(other);
-
       if (Field.isMember(other)) {
         return Qty({
           "scalar": Field.mulSafe(this.scalar, other),
