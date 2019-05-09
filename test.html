@@ -88,7 +88,7 @@
                 produces('tobase(qty(1,"inch"))','quantity(0.0254, "m")');
                 produces('qty(1.5,"m") in "cm"','quantity(150, "cm")');
                 produces('qty(100,"g") in qty("kg")','quantity(0.1, "kg")');
-                produces('as_si(quantity(1,"lb*ft"))','quantity(0.1382549544, "m*kg")');
+                produces('as_si(quantity(1,"lb*ft"))','quantity(0.138254954376, "m*kg")');
                 produces('inverse(qty(2,"m/s"))','quantity(0.5, "s/m")');
                 produces('same(qty(1,"m"),qty(100,"cm"))','false');
                 produces('same(qty(1,"m"),qty(2,"m"))','false');
@@ -117,13 +117,13 @@
                 produces('sign(qty(0,"kg"))','0');
                 produces('scalar(qty(53,"s"))','53');
                 produces('string(qty(23,"kg*s^-1"))','"23 kg/s"');
-                produces('string(qty(1000.235,"kg*m^2"), "si-fr")','"1 000,235 kg⋅m²"');
+                produces('string(qty(dec("1000.235"),"kg*m^2"), "si-fr")','"1 000,235 kg⋅m²"');
                 produces('string(qty("kg*cm^2/s^2"))','"1 kg⋅cm²/s²"');
                 produces('string(qty("tempC"))','"1 °C"');
                 produces('string(qty("degF")+qty("degC"))','"2.8 °F"');
                 produces('string(qty("degF-1degC-1"))','"1 1/°C⋅°F"');
                 produces('plain_string(qty(23,"kg/s"))','"23 kg/s"');
-                produces('plain_string(qty(1000.235,"kg*m^2"), "si-fr")','"1 000,235 kg*m^2"');
+                produces('plain_string(qty(dec(1000.235),"kg*m^2"), "si-fr")','"1 000,235 kg*m^2"');
                 produces('units_numerator(qty(1,"m"))','[ "meter" ]');
                 produces('units_denominator(qty(1,"m"))','[ "1" ]');
                 produces('units_numerator(qty(1,"kg*cm^2/s^2"))','[ "kilogram", "centi", "meter", "centi", "meter" ]');
