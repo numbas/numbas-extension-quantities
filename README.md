@@ -87,15 +87,15 @@ Convert the given quantity to base SI units.
 
 * `tobase(qty(1, "inch"))` → `quantity(0.0254, "m")`
 
-### `q_from as units` or `q_from as q_to`
+### `q_from in units` or `q_from in q_to`
 
 Convert quantity `q_from` to the units specified by the given string, or the same units as `q_to`.
 If the desired units are not compatible with `q_from`, an error is thrown.
 
 **Examples**:
 
-* `qty(1.5, "m") as "cm"` → `quantity(150, "cm")`
-* `qty(100,"g") as qty("kg")` → `quantity(0.1, "kg")`
+* `qty(1.5, "m") in "cm"` → `quantity(150, "cm")`
+* `qty(100,"g") in qty("kg")` → `quantity(0.1, "kg")`
 
 ### `as_si(quantity)`
 
