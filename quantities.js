@@ -346,9 +346,8 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
     });
 });
 
-Numbas.queueScript('js-quantities',[],function() {
-    var exports = {};
-    var module = {};
+Numbas.queueScript('js-quantities',[],function(module) {
+    var exports = module.exports;
 
 /** start of quantities.js **/
 
@@ -2680,5 +2679,5 @@ SOFTWARE.
   return Qty;
 });
 /** end of quantities.js **/
-    window.Qty = module.exports;
+module.exports = {Qty: module.exports};
 });
