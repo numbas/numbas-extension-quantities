@@ -1,4 +1,4 @@
-Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],function(quantities) {
+Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities', 'decimal'],function(quantities) {
     var jme = Numbas.jme;
 
     var superscripts = '⁰¹²³⁴⁵⁶⁷⁸⁹';
@@ -346,7 +346,7 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
     });
 });
 
-Numbas.queueScript('js-quantities',[],function(module) {
+Numbas.queueScript('js-quantities',['decimal'],function(module) {
     var exports = module.exports;
 
 /** start of quantities.js **/
