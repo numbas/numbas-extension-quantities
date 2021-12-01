@@ -21,6 +21,7 @@
         <script>
 			Numbas.queueScript('base',[],function() {});
 			Numbas.queueScript('go',['jme','localisation','extensions/quantities/quantities.js'],function() {
+                Numbas.activateExtension('quantities');
                 var s = window.scope = new Numbas.jme.Scope([Numbas.jme.builtinScope,Numbas.extensions.quantities.scope]);
                 var treeToJME = Numbas.jme.display.treeToJME.bind(Numbas.jme.display);
 
@@ -129,6 +130,7 @@
                 produces('units_numerator(qty(1,"kg*cm^2/s^2"))','[ "kilogram", "centi", "meter", "centi", "meter" ]');
                 produces('units_denominator(qty(1,"m^2/s^2"))','[ "second", "second" ]');
                 produces('units(qty(23,"m^2/s"))','quantity(1, "m^2/s")');
+                produces('units(qty("J/s/degK"))','quantity(1, "J/s*degK")');
                 produces('units_string(qty("kg*cm^2/s^2"))','"kg⋅cm²/s²"');
                 produces('plain_units_string(qty("kg*cm^2/s^2"))','"kg*cm^2/s^2"');
                 produces('sort([qty(1,"cm"),qty(1,"km"),qty(1,"m")])','[ quantity(1, "cm"), quantity(1, "m"), quantity(1, "km") ]');

@@ -346,9 +346,8 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities'],fu
     });
 });
 
-Numbas.queueScript('js-quantities',[],function() {
-    var exports = {};
-    var module = {};
+Numbas.queueScript('js-quantities',[],function(module) {
+    var exports = module.exports;
 
 /** start of quantities.js **/
 
@@ -1409,7 +1408,7 @@ SOFTWARE.
 
   var BOUNDARY_REGEX = "\\b|$";
   var UNIT_MATCH = "(" + PREFIX_REGEX + ")??(" + UNIT_REGEX + ")(?:" + BOUNDARY_REGEX + ")";
-  var UNIT_TEST_REGEX = new RegExp("^\\s*(" + UNIT_MATCH + "[\\s\\*]*)+$");
+  var UNIT_TEST_REGEX = new RegExp("^\\s*(" + UNIT_MATCH + "[\\s\\*/]*)+$");
   var UNIT_MATCH_REGEX = new RegExp(UNIT_MATCH, "g"); // g flag for multiple occurences
 
   var parsedUnitsCache = {};
@@ -2680,5 +2679,5 @@ SOFTWARE.
   return Qty;
 });
 /** end of quantities.js **/
-    window.Qty = module.exports;
+module.exports = {Qty: module.exports};
 });
