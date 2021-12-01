@@ -1006,7 +1006,7 @@ SOFTWARE.
     "<volt>": [["V", "Volt", "volt", "volts"], n(1.0), "potential", ["<meter>", "<meter>", "<kilogram>"], ["<second>", "<second>", "<second>", "<ampere>"]],
 
     /* resistance */
-    "<ohm>": [["Ohm", "ohm", "\u03A9"
+    "<ohm>": [["Ohm", "ohm", "\u03A9", "ohms", "Ohms",
     /*Ω as greek letter*/
     , "\u2126"
     /*Ω as ohm sign*/
