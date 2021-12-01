@@ -9,8 +9,16 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities', 'd
     var TQuantity = function(quantity) {
         this.value = quantity;
     };
-    jme.registerType(TQuantity,'quantity');
-    jme.display.texOps['quantity'] = function(thing,texArgs,settings) {
+    jme.registerType(
+      TQuantity,
+      'quantity',
+      {
+      	'string': function(q) {
+          return new jme.types.TString(quantity_string(q.value));
+        }
+      }
+    );
+    jme.display.texOps['quantity'] = function(thing,texArgs) {
         if(thing.args[1].tok.type=='string') {
             var units = Qty(thing.args[1].tok.value).format(function(s,units) { return tex_units(units) });
             return texArgs[0] + ' \\, ' + units;
@@ -83,12 +91,13 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities', 'd
     }
 
     jme.display.registerType(TQuantity,{
-        tex: function(thing,tok,texArgs,settings) {
+        tex: function(thing,tok,texArgs) {
+            var texifier = this;
             return tok.value.format(function(scalar,units) {
-                return settings.texNumber(scalar,settings)+' \\, '+tex_units(units);
+                return texifier.number(scalar)+' \\, '+tex_units(units);
             });
         },
-        jme: function(tree,tok,bits,settings) {
+        jme: function(tree,tok,bits) {
             var scalar = tok.value.format(function(scalar){return scalar.toString();});
             var units = tok.value.format(function(scalar,units) { return units.replace(/(\D+?)(\d+)/g,'$1^$2'); });
             return 'quantity('+scalar+', "'+jme.escape(units)+'")';
