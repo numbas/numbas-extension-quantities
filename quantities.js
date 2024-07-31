@@ -111,6 +111,9 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities', 'd
         return a.value.isCompatible(b.value) && a.value.eq(b.value);
     };
     Numbas.jme.tokenComparisons['quantity'] = function(a,b) {
+        if(!a.value.isCompatible(b.value)) {
+          return 0;
+        }
         return a.value.gt(b.value) ? 1 : a.value.lt(b.value) ? -1 : 0;
     }
 
