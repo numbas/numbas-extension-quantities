@@ -116,7 +116,7 @@
                 produces('sign(qty(20,"kg"))','1');
                 produces('sign(qty(-10,"kg"))','-1');
                 produces('sign(qty(0,"kg"))','0');
-                produces('scalar(qty(53,"s"))','53');
+                produces('scalar(qty(53,"s"))','dec("53")');
                 produces('string(qty(23,"kg*s^-1"))','"23 kg/s"');
                 produces('string(qty(dec("1000.235"),"kg*m^2"), "si-fr")','"1 000,235 kg⋅m²"');
                 produces('string(qty("kg*cm^2/s^2"))','"1 kg⋅cm²/s²"');
@@ -136,6 +136,7 @@
                 produces('sort([qty(1,"cm"),qty(1,"km"),qty(1,"m")])','[ quantity(1, "cm"), quantity(1, "m"), quantity(1, "km") ]');
                 produces('string(qty(1,"J/kg * degK"))','"1 J/kg⋅K"');
                 produces('string(1/quantity(1,"m")*quantity(1,"cm"))','"0.01"');
+                produces('qty(1,"N*m") * qty(2, "rad/s") in "W"', 'quantity(2, "W")');
             });
         </script>
     </body>
