@@ -472,8 +472,9 @@ SOFTWARE.
    * Safely multiplies numbers while avoiding floating errors
    * like 0.1 * 0.1 => 0.010000000000000002
    *
+   * @param {...number} numbers - numbers to multiply
+   *
    * @returns {number} result
-   * @param {...number} number
    */
   function mulSafe() {
     var result = 1, decimals = 0;
@@ -802,7 +803,7 @@ SOFTWARE.
 
   var UNITS = {
     /* prefixes */
-    "<googol>" : [["googol"], 1e100, "prefix"],
+    "<googol>" : [["googol"], pow(n(1),n(100)), "prefix"],
     "<kibi>"  :  [["Ki","Kibi","kibi"], pow(n(2),n(10)), "prefix"],
     "<mebi>"  :  [["Mi","Mebi","mebi"], pow(n(2),n(20)), "prefix"],
     "<gibi>"  :  [["Gi","Gibi","gibi"], pow(n(2),n(30)), "prefix"],
@@ -866,30 +867,36 @@ SOFTWARE.
     "<dalton>" : [["Da","Dalton","Daltons","dalton","daltons"], n(1.660538921e-27), "mass", ["<kilogram>"]],
     "<slug>" : [["slug","slugs"], n(14.5939029), "mass", ["<kilogram>"]],
     "<short-ton>" : [["tn","ton","short-ton"], n(907.18474), "mass", ["<kilogram>"]],
-    "<metric-ton>":[["tonne","metric-ton"], n(1000), "mass", ["<kilogram>"]],
+    "<metric-ton>":[["t","tonne","metric-ton"], n(1000), "mass", ["<kilogram>"]],
     "<carat>" : [["ct","carat","carats"], n(0.0002), "mass", ["<kilogram>"]],
     "<pound>" : [["lbs","lb","pound","pounds","#"], n(0.45359237), "mass", ["<kilogram>"]],
     "<ounce>" : [["oz","ounce","ounces"], n(0.0283495231), "mass", ["<kilogram>"]],
     "<gram>"    :  [["g","gram","grams","gramme","grammes"], n(1e-3), "mass", ["<kilogram>"]],
     "<grain>" : [["grain","grains","gr"], n(6.479891e-5), "mass", ["<kilogram>"]],
     "<dram>"  : [["dram","drams","dr"], n(0.0017718452), "mass",["<kilogram>"]],
-    "<stone>" : [["stone","stones","st"],n(6.35029318), "mass",["<kilogram>"]],
+    "<stone>" : [["stone","stones","st"], n(6.35029318), "mass",["<kilogram>"]],
 
     /* area */
     "<hectare>":[["hectare"], n(10000), "area", ["<meter>","<meter>"]],
     "<acre>":[["acre","acres"], n(4046.85642), "area", ["<meter>","<meter>"]],
-    "<sqft>":[["sqft"], n(1), "area", ["<foot>","<foot>"]],
+    "<sqft>":[["sqft"], n(0.09290304), "area", ["<foot>","<foot>"]],
 
     /* volume */
     "<liter>" : [["l","L","liter","liters","litre","litres"], n(0.001), "volume", ["<meter>","<meter>","<meter>"]],
     "<gallon>":  [["gal","gallon","gallons"], n(0.0037854118), "volume", ["<meter>","<meter>","<meter>"]],
+    "<gallon-imp>":  [["galimp","gallon-imp","gallons-imp"], n(0.0045460900), "volume", ["<meter>","<meter>","<meter>"]],
     "<quart>":  [["qt","quart","quarts"], n(0.00094635295), "volume", ["<meter>","<meter>","<meter>"]],
     "<pint>":  [["pt","pint","pints"], n(0.000473176475), "volume", ["<meter>","<meter>","<meter>"]],
+    "<pint-imp>":  [["ptimp","pint-imp","pints-imp"], n(5.6826125e-4), "volume", ["<meter>","<meter>","<meter>"]],
     "<cup>":  [["cu","cup","cups"], n(0.000236588238), "volume", ["<meter>","<meter>","<meter>"]],
     "<fluid-ounce>":  [["floz","fluid-ounce","fluid-ounces"], n(2.95735297e-5), "volume", ["<meter>","<meter>","<meter>"]],
+    "<fluid-ounce-imp>":  [["flozimp", "floz-imp","fluid-ounce-imp","fluid-ounces-imp"], n(2.84130625e-5), "volume", ["<meter>","<meter>","<meter>"]],
     "<tablespoon>":  [["tb","tbsp","tbs","tablespoon","tablespoons"], n(1.47867648e-5), "volume", ["<meter>","<meter>","<meter>"]],
     "<teaspoon>":  [["tsp","teaspoon","teaspoons"], n(4.92892161e-6), "volume", ["<meter>","<meter>","<meter>"]],
     "<bushel>":  [["bu","bsh","bushel","bushels"], n(0.035239072), "volume", ["<meter>","<meter>","<meter>"]],
+    "<oilbarrel>":  [["bbl","oilbarrel", "oilbarrels", "oil-barrel","oil-barrels"], n(0.158987294928), "volume", ["<meter>","<meter>","<meter>"]],
+    "<beerbarrel>":  [["bl","bl-us","beerbarrel", "beerbarrels", "beer-barrel","beer-barrels"], n(0.1173477658), "volume", ["<meter>","<meter>","<meter>"]],
+    "<beerbarrel-imp>":  [["blimp","bl-imp","beerbarrel-imp", "beerbarrels-imp", "beer-barrel-imp","beer-barrels-imp"], n(0.16365924), "volume", ["<meter>","<meter>","<meter>"]],
 
     /* speed */
     "<kph>" : [["kph"], n(0.277777778), "speed", ["<meter>"], ["<second>"]],
@@ -899,6 +906,7 @@ SOFTWARE.
 
     /* acceleration */
     "<gee>" : [["gee"], n(9.80665), "acceleration", ["<meter>"], ["<second>","<second>"]],
+    "<Gal>" : [["Gal"], n(1e-2), "acceleration", ["<meter>"], ["<second>","<second>"]],
 
     /* temperature_difference */
     "<kelvin>" : [["degK","kelvin"], n(1.0), "temperature", ["<kelvin>"]],
@@ -939,9 +947,9 @@ SOFTWARE.
     /* substance */
     "<mole>"  :  [["mol","mole"], n(1.0), "substance", ["<mole>"]],
 
-    /* concentration */
-    "<molar>" : [["M","molar"], n(1000), "concentration", ["<mole>"], ["<meter>","<meter>","<meter>"]],
-    "<wtpercent>"  : [["wt%","wtpercent"], n(10), "concentration", ["<kilogram>"], ["<meter>","<meter>","<meter>"]],
+    /* molar_concentration */
+    "<molar>" : [["M","molar"], n(1000), "molar_concentration", ["<mole>"], ["<meter>","<meter>","<meter>"]],
+    "<wtpercent>"  : [["wt%","wtpercent"], n(10), "molar_concentration", ["<kilogram>"], ["<meter>","<meter>","<meter>"]],
 
     /* activity */
     "<katal>" :  [["kat","katal","Katal"], n(1.0), "activity", ["<mole>"], ["<second>"]],
@@ -953,6 +961,7 @@ SOFTWARE.
     /* charge */
     "<coulomb>" :  [["C","coulomb","Coulomb"], n(1.0), "charge", ["<ampere>","<second>"]],
     "<Ah>" :  [["Ah"], n(3600), "charge", ["<ampere>","<second>"]],
+    "<elementary-charge>" :  [["e"], n(1.602176634e-19), "charge", ["<ampere>","<second>"]],
 
     /* current */
     "<ampere>"  :  [["A","Ampere","ampere","amp","amps"], n(1.0), "current", ["<ampere>"]],
@@ -981,18 +990,21 @@ SOFTWARE.
     "<oersted>"  : [["Oe","oersted","oersteds"], div(n(250.0), PI), "magnetism", ["<ampere>"], ["<meter>"]],
 
     /* energy */
-    "<joule>" :  [["J","joule","Joule","joules"], n(1.0), "energy", ["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
+    "<joule>" :  [["J","joule","Joule","joules","Joules"], n(1.0), "energy", ["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
     "<erg>"   :  [["erg","ergs"], n(1e-7), "energy", ["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
     "<btu>"   :  [["BTU","btu","BTUs"], n(1055.056), "energy", ["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
     "<calorie>" :  [["cal","calorie","calories"], n(4.18400), "energy",["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
     "<Calorie>" :  [["Cal","Calorie","Calories"], n(4184.00), "energy",["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
     "<therm-US>" : [["th","therm","therms","Therm","therm-US"], n(105480400), "energy",["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
     "<Wh>" : [["Wh"], n(3600), "energy",["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
+    "<electronvolt>" : [["eV", "electronvolt", "electronvolts"], n(1.602176634E-19), "energy", ["<meter>","<meter>","<kilogram>"], ["<second>","<second>"]],
 
     /* force */
     "<newton>"  : [["N","Newton","newton"], n(1.0), "force", ["<kilogram>","<meter>"], ["<second>","<second>"]],
     "<dyne>"  : [["dyn","dyne"], n(1e-5), "force", ["<kilogram>","<meter>"], ["<second>","<second>"]],
     "<pound-force>"  : [["lbf","pound-force"], n(4.448222), "force", ["<kilogram>","<meter>"], ["<second>","<second>"]],
+    "<kilogram-force>"  : [["kgf","kilogram-force", "kilopond", "kp"], n(9.80665), "force", ["<kilogram>","<meter>"], ["<second>","<second>"]],
+    "<gram-force>"  : [["gf","gram-force"], n(9.80665E-3), "force", ["<kilogram>","<meter>"], ["<second>","<second>"]],
 
     /* frequency */
     "<hertz>" : [["Hz","hertz","Hertz"], n(1.0), "frequency", ["<1>"], ["<second>"]],
@@ -1000,6 +1012,8 @@ SOFTWARE.
     /* angle */
     "<radian>" :[["rad","radian","radians"], n(1.0), "angle", ["<radian>"]],
     "<degree>" :[["deg","degree","degrees"], div(PI, n(180.0)), "angle", ["<radian>"]],
+    "<arcminute>" :[["arcmin","arcminute","arcminutes"], div(PI, n(10800.0)), "angle", ["<radian>"]],
+    "<arcsecond>" :[["arcsec","arcsecond","arcseconds"], div(PI, n(648000.0)), "angle", ["<radian>"]],
     "<gradian>"   :[["gon","grad","gradian","grads"], div(PI, n(200.0)), "angle", ["<radian>"]],
     "<steradian>"  : [["sr","steradian","steradians"], n(1.0), "solid_angle", ["<steradian>"]],
 
@@ -1055,11 +1069,13 @@ SOFTWARE.
     "<base-pair>"  : [["bp","base-pair"], n(1.0), "counting", ["<each>"]],
     "<nucleotide>" : [["nt","nucleotide"], n(1.0), "counting", ["<each>"]],
     "<molecule>" : [["molecule","molecules"], n(1.0), "counting", ["<1>"]],
-    "<dozen>" :  [["doz","dz","dozen"],n(12.0),"prefix_only", ["<each>"]],
+    "<dozen>" :  [["doz","dz","dozen"], n(12.0),"prefix_only", ["<each>"]],
     "<percent>": [["%","percent"], n(0.01), "prefix_only", ["<1>"]],
-    "<ppm>" :  [["ppm"],n(1e-6), "prefix_only", ["<1>"]],
-    "<ppt>" :  [["ppt"],n(1e-9), "prefix_only", ["<1>"]],
-    "<gross>" :  [["gr","gross"],n(144.0), "prefix_only", ["<dozen>","<dozen>"]],
+    "<ppm>" :  [["ppm"], n(1e-6), "prefix_only", ["<1>"]],
+    "<ppb>" :  [["ppb"], n(1e-9), "prefix_only", ["<1>"]],
+    "<ppt>" :  [["ppt"], n(1e-12), "prefix_only", ["<1>"]],
+    "<ppq>" :  [["ppq"], n(1e-15), "prefix_only", ["<1>"]],
+    "<gross>" :  [["gr","gross"], n(144.0), "prefix_only", ["<dozen>","<dozen>"]],
     "<decibel>"  : [["dB","decibel","decibels"], n(1.0), "logarithmic", ["<decibel>"]]
   };
 
@@ -1076,6 +1092,7 @@ SOFTWARE.
    * @param {string} unitDef - Name of unit to test
    * @param {Object} definition - Definition of unit to test
    *
+   * @returns {void}
    * @throws {QtyError} if unit definition is not valid
    */
   function validateUnitDefinition(unitDef, definition) {
@@ -1134,11 +1151,11 @@ SOFTWARE.
   /**
    * Returns a list of available units of kind
    *
-   * @param {string} [kind]
+   * @param {string} [kind] - kind of units
    * @returns {array} names of units
    * @throws {QtyError} if kind is unknown
    */
-  function getUnits (kind) {
+  function getUnits(kind) {
     var i;
     var units = [];
     var unitKeys = Object.keys(UNITS);
@@ -1174,7 +1191,7 @@ SOFTWARE.
   /**
    * Returns a list of alternative names for a unit
    *
-   * @param {string} unitName
+   * @param {string} unitName - name of unit
    * @returns {string[]} aliases for unit
    * @throws {QtyError} if unit is unknown
    */
@@ -1522,6 +1539,7 @@ SOFTWARE.
    * @param {*} value - Value to test
    * @param {string} [units] - Optional units when value is passed as a number
    *
+   * @returns {void}
    * @throws {QtyError} if constructor arguments are invalid
    */
   function assertValidConstructorArgs(value, units) {
@@ -2060,8 +2078,10 @@ SOFTWARE.
         throw new QtyError("Divide by zero");
       }
 
-      var precRoundedResult = Field.mulSafe(Field.round(Field.div(this.scalar, precQuantity.scalar)),
-                                         precQuantity.scalar);
+      var precRoundedResult = Field.mulSafe(
+        Field.round(Field.div(this.scalar, precQuantity.scalar)),
+        precQuantity.scalar
+      );
 
       return Qty(precRoundedResult, this.units());
     }
@@ -2111,9 +2131,7 @@ SOFTWARE.
     }
 
     return function converter(value) {
-      var i,
-          length,
-          result;
+      var i, length, result;
       if (!Array.isArray(value)) {
         return convert(value);
       }
@@ -2130,7 +2148,7 @@ SOFTWARE.
 
   var baseUnitCache = {};
 
-  function toBaseUnits (numerator,denominator) {
+  function toBaseUnits(numerator,denominator) {
     var num = [];
     var den = [];
     var q = Field.one();
@@ -2260,7 +2278,7 @@ SOFTWARE.
         other = Qty(other);
       }
 
-      if ((this.isTemperature()||other.isTemperature()) && !(this.isUnitless()||other.isUnitless())) {
+      if ((this.isTemperature() || other.isTemperature()) && !(this.isUnitless() || other.isUnitless())) {
         throw new QtyError("Cannot multiply by temperatures");
       }
 
@@ -2609,8 +2627,8 @@ SOFTWARE.
   /**
    * Default formatter
    *
-   * @param {number} scalar
-   * @param {string} units
+   * @param {number} scalar - scalar value
+   * @param {string} units - units as string
    *
    * @returns {string} formatted result
    */
@@ -2639,15 +2657,15 @@ SOFTWARE.
         return this._units;
       }
 
-      var numIsUnity = compareArray(this.numerator, UNITY_ARRAY),
-          denIsUnity = compareArray(this.denominator, UNITY_ARRAY);
+      var numIsUnity = compareArray(this.numerator, UNITY_ARRAY);
+      var denIsUnity = compareArray(this.denominator, UNITY_ARRAY);
       if (numIsUnity && denIsUnity) {
         this._units = "";
         return this._units;
       }
 
-      var numUnits = stringifyUnits(this.numerator),
-          denUnits = stringifyUnits(this.denominator);
+      var numUnits = stringifyUnits(this.numerator);
+      var denUnits = stringifyUnits(this.denominator);
       this._units = numUnits + (denIsUnity ? "" : ("/" + denUnits));
       return this._units;
     },
@@ -2773,7 +2791,7 @@ SOFTWARE.
     return unitNames;
   }
 
-  function simplify (units) {
+  function simplify(units) {
     // this turns ['s','m','s'] into ['s2','m']
 
     var unitCounts = units.reduce(function(acc, unit) {
@@ -2792,7 +2810,7 @@ SOFTWARE.
     });
   }
 
-  Qty.version = "1.7.3";
+  Qty.version = "1.8.0";
 
   return Qty;
 
