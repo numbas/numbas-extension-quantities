@@ -21,6 +21,7 @@
         <script>
 			Numbas.queueScript('base',[],function() {});
 			Numbas.queueScript('go',['jme','localisation','extensions/quantities/quantities.js'],function() {
+                Numbas.locale.init();
                 Numbas.activateExtension('quantities');
                 var s = window.scope = new Numbas.jme.Scope([Numbas.jme.builtinScope,Numbas.extensions.quantities.scope]);
                 var treeToJME = Numbas.jme.display.treeToJME.bind(Numbas.jme.display);

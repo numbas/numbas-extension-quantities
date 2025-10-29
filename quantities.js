@@ -126,6 +126,7 @@ Numbas.addExtension('quantities',['math','jme','jme-display','js-quantities', 'd
 	var TBool = jme.types.TBool;
 
     function addFunction(name,deps,outtype,fn,options) {
+        options = Object.assign({random: false}, options || {});
         return quantities.scope.addFunction(new funcObj(name,deps,outtype,fn,options));
     };
 
